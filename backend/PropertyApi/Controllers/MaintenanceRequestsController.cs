@@ -1,0 +1,144 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PropertyApi.DTOs;
+using PropertyApi.Models;
+using PropertyApi.Services;
+
+namespace PropertyApi.Controllers;
+
+[ApiController]
+[Route("api/maintenance-requests")]
+public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : ControllerBase
+{
+    // GET /api/maintenance-requests
+    // Managers see all requests for their properties.
+    // Tenants see only their own requests.
+    // Maintenance staff see requests assigned to them.
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? unitId)
+    {
+        var query = db.MaintenanceRequests
+            .Include(r => r.Unit)
+            .Include(r => r.Tenant)
+            .Include(r => r.Assignee)
+            .AsQueryable();
+
+        if (status is not null)
+            query = query.Where(r => r.Status == status);
+
+        if (unitId is not null)
+            query = query.Where(r => r.UnitId == unitId);
+
+        var results = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => ToResponse(r))
+            .ToListAsync();
+
+        return Ok(results);
+    }
+
+    // GET /api/maintenance-requests/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var request = await db.MaintenanceRequests
+            .Include(r => r.Unit)
+            .Include(r => r.Tenant)
+            .Include(r => r.Assignee)
+            .Include(r => r.Comments).ThenInclude(c => c.Author)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (request is null) return NotFound();
+        return Ok(ToResponse(request));
+    }
+
+    // POST /api/maintenance-requests
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateMaintenanceRequestRequest dto)
+    {
+        var unit = await db.Units.FindAsync(dto.UnitId);
+        if (unit is null) return BadRequest("Unit not found.");
+
+        // TODO: replace hardcoded tenant with the authenticated user's ID from JWT
+        var placeholderTenantId = Guid.Empty;
+
+        var request = new MaintenanceRequest
+        {
+            UnitId      = dto.UnitId,
+            TenantId    = placeholderTenantId,
+            Title       = dto.Title,
+            Description = dto.Description,
+            Category    = dto.Category,
+            Priority    = dto.Priority,
+        };
+
+        db.MaintenanceRequests.Add(request);
+        await db.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id = request.Id }, request.Id);
+    }
+
+    // PATCH /api/maintenance-requests/{id}
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMaintenanceRequestRequest dto)
+    {
+        var request = await db.MaintenanceRequests.FindAsync(id);
+        if (request is null) return NotFound();
+
+        if (dto.Status is not null)
+        {
+            request.Status = dto.Status;
+            if (dto.Status == "resolved") request.ResolvedAt = DateTime.UtcNow;
+        }
+        if (dto.AssignedTo is not null) request.AssignedTo = dto.AssignedTo;
+        if (dto.Priority is not null)   request.Priority = dto.Priority;
+
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // POST /api/maintenance-requests/{id}/comments
+    [HttpPost("{id:guid}/comments")]
+    public async Task<IActionResult> AddComment(Guid id, [FromBody] CreateCommentRequest dto)
+    {
+        var request = await db.MaintenanceRequests.FindAsync(id);
+        if (request is null) return NotFound();
+
+        // TODO: replace with authenticated user ID from JWT
+        var placeholderAuthorId = Guid.Empty;
+
+        var comment = new MaintenanceComment
+        {
+            RequestId = id,
+            AuthorId  = placeholderAuthorId,
+            Body      = dto.Body,
+        };
+
+        db.MaintenanceComments.Add(comment);
+        await db.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id }, comment.Id);
+    }
+
+    // POST /api/maintenance-requests/{id}/photo-upload-url
+    // Returns a pre-signed S3 URL so the frontend can upload directly.
+    // The frontend uploads to S3; then calls PATCH to save the key.
+    [HttpPost("{id:guid}/photo-upload-url")]
+    public async Task<IActionResult> GetPhotoUploadUrl(Guid id, [FromQuery] string contentType = "image/jpeg")
+    {
+        var request = await db.MaintenanceRequests.FindAsync(id);
+        if (request is null) return NotFound();
+
+        var key = $"maintenance/{id}/photo-{Guid.NewGuid()}.jpg";
+        var uploadUrl = await s3.GetUploadUrlAsync(key, contentType);
+
+        return Ok(new PresignedUrlResponse(uploadUrl, key));
+    }
+
+    // ── Mapping helper ───────────────────────────────────────────────────────
+    private static MaintenanceRequestResponse ToResponse(MaintenanceRequest r) => new(
+        r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
+        r.TenantId, r.Tenant?.FullName ?? "",
+        r.AssignedTo, r.Assignee?.FullName,
+        r.Title, r.Description, r.Category, r.Priority, r.Status,
+        r.S3PhotoKey, r.CreatedAt, r.ResolvedAt
+    );
+}
