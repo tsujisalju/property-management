@@ -16,17 +16,41 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Users
+        // ── Users ──────────────────────────────────────────────────────────
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<User>()
             .HasIndex(u => u.CognitoSub).IsUnique();
 
-        // Units: unit_number is unique per property
+        // ── MaintenanceRequest → User (two separate FKs to the same table) ─
+        // EF Core cannot infer these automatically because both sides have
+        // multiple matching navigation properties. We name each relationship
+        // explicitly so there is no ambiguity.
+
+        // FK: MaintenanceRequest.TenantId → User
+        // Inverse: User.MaintenanceRequests
+        modelBuilder.Entity<MaintenanceRequest>()
+            .HasOne(r => r.Tenant)
+            .WithMany(u => u.MaintenanceRequests)
+            .HasForeignKey(r => r.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // FK: MaintenanceRequest.AssignedTo → User (nullable)
+        // Inverse: User.AssignedRequests
+        modelBuilder.Entity<MaintenanceRequest>()
+            .HasOne(r => r.Assignee)
+            .WithMany(u => u.AssignedRequests)
+            .HasForeignKey(r => r.AssignedTo)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // ── Units ──────────────────────────────────────────────────────────
+        // unit_number is unique per property
         modelBuilder.Entity<Unit>()
             .HasIndex(u => new { u.PropertyId, u.UnitNumber }).IsUnique();
 
-        // Budgets: one row per property/year/month/category
+        // ── Budgets ────────────────────────────────────────────────────────
+        // one row per property/year/month/category
         modelBuilder.Entity<Budget>()
             .HasIndex(b => new { b.PropertyId, b.Year, b.Month, b.Category }).IsUnique();
     }
