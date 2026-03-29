@@ -8,10 +8,14 @@ import type {
   LeaseResponse,
 } from "@/types";
 
-// In development the Next.js rewrite in next.config.ts proxies /api/* to the
-// backend, so we never expose the backend URL to the browser.
-// In production on Vercel this env var points to the EC2 public URL.
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+// Server-side: use BACKEND_URL (internal Docker/network address) to call the
+// backend directly — relative URLs are not valid in server-side fetch.
+// Client-side: use NEXT_PUBLIC_API_URL if set (production EC2 URL), otherwise
+// "" so the Next.js rewrite in next.config.ts proxies /api/* to the backend.
+const BASE =
+  typeof window === "undefined"
+    ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080")
+    : (process.env.NEXT_PUBLIC_API_URL ?? "");
 
 class ApiClientError extends Error {
   constructor(public status: number, message: string) {
