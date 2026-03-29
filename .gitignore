@@ -15,6 +15,7 @@ backend/*/obj/
 .vscode/
 *.user
 *.suo
+.vs/
 
 # macOS
 .DS_Store
