@@ -12,6 +12,8 @@ public record UserResponse(Guid Id, string FullName, string Email, string? Phone
 
 public record PropertyResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt);
 
+public record PropertyDetailResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt, IEnumerable<UnitResponse> Units);
+
 public record CreatePropertyRequest(
     string Name,
     string Address,

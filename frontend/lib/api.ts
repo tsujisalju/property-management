@@ -5,6 +5,8 @@ import type {
   InvoiceResponse,
   BudgetResponse,
   PropertyResponse,
+  PropertyDetailResponse,
+  UnitResponse,
   LeaseResponse,
 } from "@/types";
 
@@ -54,7 +56,18 @@ export const healthApi = {
 
 export const propertiesApi = {
   list: () => request<PropertyResponse[]>("/properties"),
-  get: (id: string) => request<PropertyResponse>(`/properties/${id}`),
+  get: (id: string) => request<PropertyDetailResponse>(`/properties/${id}`),
+  create: (body: { name: string; address: string; city: string; totalUnits: number }) =>
+    request<PropertyResponse>("/properties", { method: "POST", body: JSON.stringify(body) }),
+  getUnits: (propertyId: string) => request<UnitResponse[]>(`/properties/${propertyId}/units`),
+  createUnit: (
+    propertyId: string,
+    body: { unitNumber: string; floor?: number | null; bedrooms: number; rentAmount: number }
+  ) =>
+    request<UnitResponse>(`/properties/${propertyId}/units`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 // ── Leases ─────────────────────────────────────────────────────────────────

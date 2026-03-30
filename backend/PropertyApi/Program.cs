@@ -16,7 +16,8 @@ builder.Services.AddSwaggerGen(c =>
 
 // ── Database ───────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+           .UseSnakeCaseNamingConvention());
 
 // ── AWS Services ───────────────────────────────────────────────────────────
 // In development: reads AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from .env
@@ -58,13 +59,5 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-// ── Auto-run DB migrations on startup ─────────────────────────────────────
-// Convenient for Docker Compose so you don't need a separate migration step
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-}
 
 app.Run();

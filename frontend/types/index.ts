@@ -34,6 +34,10 @@ export interface PropertyResponse {
   createdAt: string;
 }
 
+export interface PropertyDetailResponse extends PropertyResponse {
+  units: UnitResponse[];
+}
+
 export interface UnitResponse {
   id: string;
   propertyId: string;
