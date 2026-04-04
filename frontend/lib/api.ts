@@ -1,6 +1,7 @@
 import type {
   HealthResponse,
   MaintenanceRequestResponse,
+  MaintenanceRequestDetailResponse,
   PresignedUrlResponse,
   InvoiceResponse,
   BudgetResponse,
@@ -87,7 +88,10 @@ export const maintenanceApi = {
     return request<MaintenanceRequestResponse[]>(`/maintenance-requests${qs ? `?${qs}` : ""}`);
   },
 
-  get: (id: string) => request<MaintenanceRequestResponse>(`/maintenance-requests/${id}`),
+  get: (id: string) => request<MaintenanceRequestDetailResponse>(`/maintenance-requests/${id}`),
+
+  getPhotoUrl: (id: string) =>
+    request<{ url: string }>(`/maintenance-requests/${id}/photo-url`),
 
   create: (body: {
     unitId: string;

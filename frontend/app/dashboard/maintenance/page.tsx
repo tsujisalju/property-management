@@ -1,51 +1,143 @@
-import { Building } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { maintenanceApi } from "@/lib/api";
+import type { MaintenanceRequestResponse, RequestStatus } from "@/types";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { PriorityBadge } from "@/components/ui/PriorityBadge";
+import { Building, DoorClosed, User } from "lucide-react";
 import Link from "next/link";
 
-export default function MaintenancePage() {
+type FilterTab = "all" | RequestStatus;
+
+const TABS: { label: string; value: FilterTab }[] = [
+  { label: "All", value: "all" },
+  { label: "Open", value: "open" },
+  { label: "In Progress", value: "in_progress" },
+  { label: "Resolved", value: "resolved" },
+];
+
+function RequestCard({ request }: { request: MaintenanceRequestResponse }) {
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto space-y-4">
-        <h1 className="font-semibold text-2xl">Maintenance Page</h1>
-        <h2 className="text-xl">Maintenance Requests</h2>
-        <div className="join">
-          <button className="btn btn-sm btn-neutral rounded-l-full join-item">
-            All
-          </button>
-          <button className="btn btn-sm join-item">Open</button>
-          <button className="btn btn-sm join-item">In progress</button>
-          <button className="btn btn-sm rounded-r-full join-item">
-            Resolved
-          </button>
-        </div>
-        <Link href="/dashboard/maintenance/1">
-          <div className="card card-sm bg-base-100 shadow-sm hover:shadow-lg transition">
-            <div className="card-body">
-              <div className="flex justify-between">
-                <h2 className="card-title">Request title</h2>
-                <span className="m-1 badge badge-sm badge-primary">Status</span>
+    <Link href={`/dashboard/maintenance/${request.id}`}>
+      <div
+        className={`card card-sm bg-base-100 ${request.priority == "emergency" && request.status != "resolved" && "border border-error"} shadow-sm hover:shadow-md transition cursor-pointer`}
+      >
+        <div className="card-body gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="card-title text-base">{request.title}</h2>
+            <StatusBadge status={request.status} />
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-base-content/70">
+            <div className="flex items-center gap-1.5">
+              <div className="flex bg-base-200 rounded-full w-7 h-7 justify-center items-center">
+                <DoorClosed className="size-3.5" />
               </div>
-              <div className="flex space-x-4 items-center">
-                <div className="flex space-x-2 items-center">
-                  <div className="flex bg-neutral-content rounded-full w-8 h-8 justify-center items-center">
-                    <Building className="size-3.5" />
+              <span>{request.unitNumber}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="avatar avatar-placeholder">
+                  <div className="bg-neutral text-neutral-content w-7 rounded-full text-xs">
+                    <span>{request.tenantName.slice(0, 2).toUpperCase()}</span>
                   </div>
-                  <span>Unit</span>
                 </div>
-                <div className="flex space-x-2 items-center">
-                  <div className="avatar avatar-placeholder">
-                    <div className="bg-neutral-content w-8 rounded-full">
-                      <span>QY</span>
-                    </div>
-                  </div>
-                  <p>Qayyum Yazid</p>
-                </div>
-                <div>
-                  <span className="badge badge-sm badge-warning">Priority</span>
-                </div>
+                <span>{request.tenantName}</span>
               </div>
+              <PriorityBadge priority={request.priority} />
+              <span className="badge badge-sm badge-soft badge-neutral capitalize">
+                {request.category}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span>
+                {new Date(request.createdAt).toLocaleDateString("en-MY", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
             </div>
           </div>
-        </Link>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export default function MaintenancePage() {
+  const [requests, setRequests] = useState<MaintenanceRequestResponse[]>([]);
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    maintenanceApi
+      .list()
+      .then(setRequests)
+      .catch(() => setError("Failed to load maintenance requests."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered =
+    activeTab === "all"
+      ? requests
+      : requests.filter((r) => r.status === activeTab);
+
+  return (
+    <main className="min-h-screen bg-base-200 p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div>
+          <h1 className="font-bold text-2xl">Maintenance Requests</h1>
+          <p className="text-base-content/60 text-sm mt-1">
+            Track and manage all maintenance requests
+          </p>
+        </div>
+
+        <div className="join">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`btn btn-sm join-item ${activeTab === tab.value ? "btn-neutral" : "btn-ghost"}`}
+            >
+              {tab.label}
+              {tab.value !== "all" && (
+                <span className="badge badge-sm ml-1">
+                  {requests.filter((r) => r.status === tab.value).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {loading && (
+          <div className="flex justify-center py-16">
+            <span className="loading loading-spinner loading-md" />
+          </div>
+        )}
+
+        {error && (
+          <div className="alert alert-error">
+            <span>{error}</span>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
+          <div className="text-center py-16 text-base-content/50">
+            No {activeTab === "all" ? "" : activeTab.replace("_", " ")} requests
+            found.
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="flex flex-col gap-3">
+            {filtered.map((r) => (
+              <RequestCard key={r.id} request={r} />
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

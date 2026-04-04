@@ -64,6 +64,25 @@ public record MaintenanceRequestResponse(
     DateTime? ResolvedAt
 );
 
+public record MaintenanceRequestDetailResponse(
+    Guid Id,
+    Guid UnitId,
+    string UnitNumber,
+    Guid TenantId,
+    string TenantName,
+    Guid? AssignedTo,
+    string? AssigneeName,
+    string Title,
+    string? Description,
+    string Category,
+    string Priority,
+    string Status,
+    string? S3PhotoKey,
+    DateTime CreatedAt,
+    DateTime? ResolvedAt,
+    IEnumerable<CommentResponse> Comments
+);
+
 public record CreateMaintenanceRequestRequest(
     Guid UnitId,
     string Title,

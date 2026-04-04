@@ -49,7 +49,19 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (request is null) return NotFound();
-        return Ok(ToResponse(request));
+        return Ok(ToDetailResponse(request));
+    }
+
+    // GET /api/maintenance-requests/{id}/photo-url
+    [HttpGet("{id:guid}/photo-url")]
+    public async Task<IActionResult> GetPhotoUrl(Guid id)
+    {
+        var request = await db.MaintenanceRequests.FindAsync(id);
+        if (request is null) return NotFound();
+        if (request.S3PhotoKey is null) return NotFound("No photo attached.");
+
+        var url = await s3.GetDownloadUrlAsync(request.S3PhotoKey);
+        return Ok(new { url });
     }
 
     // POST /api/maintenance-requests
@@ -133,12 +145,23 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
         return Ok(new PresignedUrlResponse(uploadUrl, key));
     }
 
-    // ── Mapping helper ───────────────────────────────────────────────────────
+    // ── Mapping helpers ──────────────────────────────────────────────────────
     private static MaintenanceRequestResponse ToResponse(MaintenanceRequest r) => new(
         r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
         r.TenantId, r.Tenant?.FullName ?? "",
         r.AssignedTo, r.Assignee?.FullName,
         r.Title, r.Description, r.Category, r.Priority, r.Status,
         r.S3PhotoKey, r.CreatedAt, r.ResolvedAt
+    );
+
+    private static MaintenanceRequestDetailResponse ToDetailResponse(MaintenanceRequest r) => new(
+        r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
+        r.TenantId, r.Tenant?.FullName ?? "",
+        r.AssignedTo, r.Assignee?.FullName,
+        r.Title, r.Description, r.Category, r.Priority, r.Status,
+        r.S3PhotoKey, r.CreatedAt, r.ResolvedAt,
+        r.Comments?.OrderBy(c => c.CreatedAt)
+            .Select(c => new CommentResponse(c.Id, c.AuthorId, c.Author?.FullName ?? "Unknown", c.Body, c.CreatedAt))
+            ?? Enumerable.Empty<CommentResponse>()
     );
 }

@@ -77,6 +77,10 @@ export interface MaintenanceRequestResponse {
   resolvedAt: string | null;
 }
 
+export interface MaintenanceRequestDetailResponse extends MaintenanceRequestResponse {
+  comments: CommentResponse[];
+}
+
 export interface CommentResponse {
   id: string;
   authorId: string;
