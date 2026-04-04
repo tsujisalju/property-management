@@ -2,23 +2,25 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PropertyApi.DTOs;
 using PropertyApi.Models;
+using PropertyApi.Services;
 
 namespace PropertyApi.Controllers;
 
 [ApiController]
 [Route("api/properties")]
-public class PropertiesController(AppDbContext db) : ControllerBase
+public class PropertiesController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
 {
-    // GET /api/properties
-    // TODO: filter by authenticated manager's ID from JWT
+    // GET /api/properties — returns properties managed by the current user
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var properties = await db.Properties
-            .OrderBy(p => p.Name)
-            .Select(p => ToResponse(p))
-            .ToListAsync();
+        var manager = await currentUser.GetCurrentUserAsync();
 
+        var query = db.Properties.AsQueryable();
+        if (manager is not null)
+            query = query.Where(p => p.ManagerId == manager.Id);
+
+        var properties = await query.OrderBy(p => p.Name).Select(p => ToResponse(p)).ToListAsync();
         return Ok(properties);
     }
 
@@ -39,12 +41,11 @@ public class PropertiesController(AppDbContext db) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePropertyRequest dto)
     {
-        // TODO: replace with authenticated manager's ID from JWT
-        var placeholderManagerId = Guid.Empty;
+        var manager = await currentUser.RequireCurrentUserAsync();
 
         var property = new Property
         {
-            ManagerId  = placeholderManagerId,
+            ManagerId  = manager.Id,
             Name       = dto.Name,
             Address    = dto.Address,
             City       = dto.City,

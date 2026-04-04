@@ -8,7 +8,7 @@ namespace PropertyApi.Controllers;
 
 [ApiController]
 [Route("api/maintenance-requests")]
-public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : ControllerBase
+public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurrentUserService currentUser) : ControllerBase
 {
     // GET /api/maintenance-requests
     // Managers see all requests for their properties.
@@ -71,13 +71,12 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
         var unit = await db.Units.FindAsync(dto.UnitId);
         if (unit is null) return BadRequest("Unit not found.");
 
-        // TODO: replace hardcoded tenant with the authenticated user's ID from JWT
-        var placeholderTenantId = Guid.Empty;
+        var tenant = await currentUser.RequireCurrentUserAsync();
 
         var request = new MaintenanceRequest
         {
             UnitId      = dto.UnitId,
-            TenantId    = placeholderTenantId,
+            TenantId    = tenant.Id,
             Title       = dto.Title,
             Description = dto.Description,
             Category    = dto.Category,
@@ -115,13 +114,12 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
         var request = await db.MaintenanceRequests.FindAsync(id);
         if (request is null) return NotFound();
 
-        // TODO: replace with authenticated user ID from JWT
-        var placeholderAuthorId = Guid.Empty;
+        var author = await currentUser.RequireCurrentUserAsync();
 
         var comment = new MaintenanceComment
         {
             RequestId = id,
-            AuthorId  = placeholderAuthorId,
+            AuthorId  = author.Id,
             Body      = dto.Body,
         };
 

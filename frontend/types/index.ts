@@ -25,6 +25,11 @@ export interface UserResponse {
   createdAt: string;
 }
 
+export interface UpdateUserRequest {
+  fullName?: string;
+  phone?: string;
+}
+
 export interface PropertyResponse {
   id: string;
   name: string;

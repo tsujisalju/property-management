@@ -4,15 +4,9 @@
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ── Enums ──────────────────────────────────────────────────────────────────
-
-CREATE TYPE user_role        AS ENUM ('manager', 'tenant', 'maintenance_staff', 'admin');
-CREATE TYPE lease_status     AS ENUM ('active', 'expired', 'terminated');
-CREATE TYPE unit_status      AS ENUM ('vacant', 'occupied', 'maintenance');
-CREATE TYPE request_status   AS ENUM ('open', 'in_progress', 'resolved', 'closed');
-CREATE TYPE request_priority AS ENUM ('low', 'medium', 'high', 'emergency');
-CREATE TYPE invoice_status   AS ENUM ('pending', 'paid', 'overdue', 'cancelled');
-CREATE TYPE invoice_type     AS ENUM ('rent', 'maintenance', 'deposit', 'penalty');
+-- Enum types removed — columns use TEXT with CHECK constraints instead.
+-- PostgreSQL custom enums require explicit casts on writes which conflicts
+-- with how EF Core / Npgsql sends string parameters.
 
 -- ── Tables ─────────────────────────────────────────────────────────────────
 
@@ -22,7 +16,7 @@ CREATE TABLE users (
     full_name   VARCHAR(255) NOT NULL,
     email       VARCHAR(255) UNIQUE NOT NULL,
     phone       VARCHAR(20),
-    role        user_role NOT NULL DEFAULT 'tenant',
+    role        TEXT NOT NULL DEFAULT 'tenant' CHECK (role IN ('manager', 'tenant', 'maintenance_staff', 'admin')),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -43,7 +37,7 @@ CREATE TABLE units (
     floor       INT,
     bedrooms    INT NOT NULL DEFAULT 1,
     rent_amount DECIMAL(10,2) NOT NULL,
-    status      unit_status NOT NULL DEFAULT 'vacant',
+    status      TEXT NOT NULL DEFAULT 'vacant' CHECK (status IN ('vacant', 'occupied', 'maintenance')),
     UNIQUE (property_id, unit_number)
 );
 
@@ -54,7 +48,7 @@ CREATE TABLE leases (
     start_date   DATE NOT NULL,
     end_date     DATE NOT NULL,
     monthly_rent DECIMAL(10,2) NOT NULL,
-    status       lease_status NOT NULL DEFAULT 'active',
+    status       TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'terminated')),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -66,8 +60,8 @@ CREATE TABLE maintenance_requests (
     title       VARCHAR(255) NOT NULL,
     description TEXT,
     category    VARCHAR(50) NOT NULL DEFAULT 'general',
-    priority    request_priority NOT NULL DEFAULT 'medium',
-    status      request_status NOT NULL DEFAULT 'open',
+    priority    TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'emergency')),
+    status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
     s3_photo_key VARCHAR(512),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     resolved_at TIMESTAMPTZ
@@ -84,11 +78,11 @@ CREATE TABLE maintenance_comments (
 CREATE TABLE invoices (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lease_id   UUID NOT NULL REFERENCES leases(id),
-    type       invoice_type NOT NULL DEFAULT 'rent',
+    type       TEXT NOT NULL DEFAULT 'rent' CHECK (type IN ('rent', 'maintenance', 'deposit', 'penalty')),
     amount     DECIMAL(10,2) NOT NULL,
     due_date   DATE NOT NULL,
     paid_date  DATE,
-    status     invoice_status NOT NULL DEFAULT 'pending',
+    status     TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
     s3_pdf_key VARCHAR(512),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -118,7 +112,7 @@ CREATE INDEX idx_budgets_property_ym   ON budgets(property_id, year, month);
 -- ── Seed data (local dev only) ─────────────────────────────────────────────
 
 INSERT INTO users (cognito_sub, full_name, email, role) VALUES
-  ('dev-manager-001',  'Alice Manager',    'manager@dev.local',    'manager'),
-  ('dev-tenant-001',   'Bob Tenant',       'tenant@dev.local',     'tenant'),
-  ('dev-finance-001',  'Carol Finance',    'finance@dev.local',    'admin'),
-  ('dev-staff-001',    'Dave Maintenance', 'staff@dev.local',      'maintenance_staff');
+  ('690af55c-a001-709a-7c0c-347bccdae400',  'Qayyum Yazid',    'manager@dev.local',    'manager'),
+  ('39aa75bc-20a1-70bb-4572-59b72f856ccf',   'Ahmed Saleh',       'tenant@dev.local',     'tenant'),
+  ('491aa56c-0071-70d4-0847-a424c47aae21',  'Teshwindev',    'finance@dev.local',    'admin'),
+  ('c96ac52c-f011-7097-f15c-ae69c75bfe6d',    'Hayyan', 'staff@dev.local',      'maintenance_staff');

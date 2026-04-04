@@ -8,6 +8,8 @@ public record HealthResponse(string Status, string Environment, string Database,
 
 public record UserResponse(Guid Id, string FullName, string Email, string? Phone, string Role, DateTime CreatedAt);
 
+public record UpdateUserRequest(string? FullName, string? Phone);
+
 // ── Properties ─────────────────────────────────────────────────────────────
 
 public record PropertyResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt);

@@ -9,6 +9,7 @@ import type {
   PropertyDetailResponse,
   UnitResponse,
   LeaseResponse,
+  UserResponse,
 } from "@/types";
 
 // Server-side: use BACKEND_URL (internal Docker/network address) to call the
@@ -33,7 +34,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       ...init?.headers,
     },
-    credentials: "include", // forwards the session cookie (for Cognito later)
+    credentials: "include", // sends the auth_token cookie automatically
   });
 
   if (!res.ok) {
@@ -46,6 +47,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+// ── Users ──────────────────────────────────────────────────────────────────
+
+export const usersApi = {
+  me: () => request<UserResponse>("/users/me"),
+  updateMe: (body: { fullName?: string; phone?: string }) =>
+    request<UserResponse>("/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+};
 
 // ── Health ─────────────────────────────────────────────────────────────────
 
