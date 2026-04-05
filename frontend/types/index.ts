@@ -68,6 +68,7 @@ export interface MaintenanceRequestResponse {
   id: string;
   unitId: string;
   unitNumber: string;
+  propertyName: string;
   tenantId: string;
   tenantName: string;
   assignedTo: string | null;

@@ -18,7 +18,7 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? unitId)
     {
         var query = db.MaintenanceRequests
-            .Include(r => r.Unit)
+            .Include(r => r.Unit).ThenInclude(u => u.Property)
             .Include(r => r.Tenant)
             .Include(r => r.Assignee)
             .AsQueryable();
@@ -42,7 +42,7 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
     public async Task<IActionResult> GetById(Guid id)
     {
         var request = await db.MaintenanceRequests
-            .Include(r => r.Unit)
+            .Include(r => r.Unit).ThenInclude(u => u.Property)
             .Include(r => r.Tenant)
             .Include(r => r.Assignee)
             .Include(r => r.Comments).ThenInclude(c => c.Author)
@@ -146,6 +146,7 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
     // ── Mapping helpers ──────────────────────────────────────────────────────
     private static MaintenanceRequestResponse ToResponse(MaintenanceRequest r) => new(
         r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
+        r.Unit?.Property?.Name ?? "",
         r.TenantId, r.Tenant?.FullName ?? "",
         r.AssignedTo, r.Assignee?.FullName,
         r.Title, r.Description, r.Category, r.Priority, r.Status,
@@ -154,6 +155,7 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
 
     private static MaintenanceRequestDetailResponse ToDetailResponse(MaintenanceRequest r) => new(
         r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
+        r.Unit?.Property?.Name ?? "",
         r.TenantId, r.Tenant?.FullName ?? "",
         r.AssignedTo, r.Assignee?.FullName,
         r.Title, r.Description, r.Category, r.Priority, r.Status,
