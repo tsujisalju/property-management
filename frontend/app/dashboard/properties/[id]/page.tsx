@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { propertiesApi, uploadFileToS3 } from "@/lib/api";
+import { propertiesApi } from "@/lib/api";
 import type { PropertyDetailResponse, UnitResponse } from "@/types";
 import {
   ArrowLeft,

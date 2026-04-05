@@ -48,7 +48,6 @@ function PhotoThumbnail({ propertyId }: { propertyId: string }) {
   }, [propertyId]);
 
   if (!url) return <div className="w-full h-full bg-base-200" />;
-  // eslint-disable-next-line @next/next/no-img-element
   return (
     <Image
       src={url}
