@@ -1,5 +1,6 @@
 -- Sample maintenance requests for local dev testing.
--- Run with: docker compose exec -T db psql -U postgres propertydb < db/sample_maintenance_requests.sql
+-- Run with bash: docker compose exec -T db psql -U postgres propertydb < db/sample_maintenance_requests.sql
+-- Or with PowerShell, enter query in: docker compose exec db psql -U postgres propertydb
 
 DO $$
 DECLARE
