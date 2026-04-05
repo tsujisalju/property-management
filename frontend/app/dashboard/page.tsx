@@ -3,8 +3,18 @@ import Link from "next/link";
 // Each team member expands their own card into a full feature section.
 const sections = [
   {
+    title: "Properties",
+    description:
+      "Add new property information and create units for tenants to reside in.",
+    href: "/dashboard/properties",
+    role: "Property manager",
+    color: "bg-fuchsia-50 border-fuchsia-200",
+    badge: "bg-fuchsia-100 text-fuchsia-700",
+  },
+  {
     title: "Maintenance",
-    description: "Schedule repairs, track work history, respond to tenant requests.",
+    description:
+      "Schedule repairs, track work history, respond to tenant requests.",
     href: "/dashboard/maintenance",
     role: "Property manager",
     color: "bg-blue-50 border-blue-200",
@@ -12,7 +22,8 @@ const sections = [
   },
   {
     title: "Tenant portal",
-    description: "Submit issues, view lease details, communicate with management.",
+    description:
+      "Submit issues, view lease details, communicate with management.",
     href: "/dashboard/tenant",
     role: "Tenant",
     color: "bg-purple-50 border-purple-200",
@@ -38,33 +49,33 @@ const sections = [
 
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-gray-500">Select a section to get started.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {sections.map((s) => (
-            <Link
-              key={s.href}
-              href={s.href}
-              className={`rounded-xl border p-6 hover:shadow-md transition-shadow ${s.color}`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-medium text-gray-900">{s.title}</p>
-                  <p className="mt-1 text-sm text-gray-600">{s.description}</p>
-                </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${s.badge}`}>
-                  {s.role}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <p className="mt-1 text-gray-500">Select a section to get started.</p>
       </div>
-    </main>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {sections.map((s) => (
+          <Link
+            key={s.href}
+            href={s.href}
+            className={`rounded-xl border p-6 hover:shadow-md transition-shadow ${s.color}`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-medium text-gray-900">{s.title}</p>
+                <p className="mt-1 text-sm text-gray-600">{s.description}</p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${s.badge}`}
+              >
+                {s.role}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }

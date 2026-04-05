@@ -78,7 +78,7 @@ public class MaintenanceRequest
     public string Category { get; set; } = "general"; // plumbing | electrical | hvac | general
     public string Priority { get; set; } = "medium";  // low | medium | high | emergency
     public string Status { get; set; } = "open";      // open | in_progress | resolved | closed
-    public string? S3PhotoKey { get; set; }
+    [Column("s3_photo_key")] public string? S3PhotoKey { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ResolvedAt { get; set; }
 
@@ -109,7 +109,7 @@ public class Invoice
     public DateOnly DueDate { get; set; }
     public DateOnly? PaidDate { get; set; }
     public string Status { get; set; } = "pending"; // pending | paid | overdue | cancelled
-    public string? S3PdfKey { get; set; }
+    [Column("s3_pdf_key")] public string? S3PdfKey { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey(nameof(LeaseId))] public Lease Lease { get; set; } = null!;

@@ -11,8 +11,8 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__Default=Host=db;Port=5432;Database=propertydb;Username=postgres;Password=localpass
       - AWS_REGION=ap-southeast-1
-      - Jwt__Issuer=https://cognito-idp.ap-southeast-1.amazonaws.com/local
-      - Jwt__Audience=local-client
+      - Jwt__Issuer=https://cognito-idp.ap-southeast-1.amazonaws.com/${COGNITO_USER_POOL_ID}
+      - Jwt__Audience=${COGNITO_CLIENT_ID}
     env_file:
       - .env
     depends_on:
@@ -32,6 +32,8 @@ services:
     environment:
       - BACKEND_URL=http://backend:8080
       - NODE_ENV=development
+      - NEXT_PUBLIC_COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
+      - NEXT_PUBLIC_COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}
     volumes:
       - ./frontend:/app
       - /app/node_modules

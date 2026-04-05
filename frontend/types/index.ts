@@ -25,6 +25,11 @@ export interface UserResponse {
   createdAt: string;
 }
 
+export interface UpdateUserRequest {
+  fullName?: string;
+  phone?: string;
+}
+
 export interface PropertyResponse {
   id: string;
   name: string;
@@ -32,6 +37,10 @@ export interface PropertyResponse {
   city: string;
   totalUnits: number;
   createdAt: string;
+}
+
+export interface PropertyDetailResponse extends PropertyResponse {
+  units: UnitResponse[];
 }
 
 export interface UnitResponse {
@@ -59,6 +68,7 @@ export interface MaintenanceRequestResponse {
   id: string;
   unitId: string;
   unitNumber: string;
+  propertyName: string;
   tenantId: string;
   tenantName: string;
   assignedTo: string | null;
@@ -71,6 +81,10 @@ export interface MaintenanceRequestResponse {
   s3PhotoKey: string | null;
   createdAt: string;
   resolvedAt: string | null;
+}
+
+export interface MaintenanceRequestDetailResponse extends MaintenanceRequestResponse {
+  comments: CommentResponse[];
 }
 
 export interface CommentResponse {

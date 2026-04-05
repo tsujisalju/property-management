@@ -1,11 +1,15 @@
 import type {
   HealthResponse,
   MaintenanceRequestResponse,
+  MaintenanceRequestDetailResponse,
   PresignedUrlResponse,
   InvoiceResponse,
   BudgetResponse,
   PropertyResponse,
+  PropertyDetailResponse,
+  UnitResponse,
   LeaseResponse,
+  UserResponse,
 } from "@/types";
 
 // Server-side: use BACKEND_URL (internal Docker/network address) to call the
@@ -30,7 +34,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       ...init?.headers,
     },
-    credentials: "include", // forwards the session cookie (for Cognito later)
+    credentials: "include", // sends the auth_token cookie automatically
   });
 
   if (!res.ok) {
@@ -44,6 +48,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// ── Users ──────────────────────────────────────────────────────────────────
+
+export const usersApi = {
+  me: () => request<UserResponse>("/users/me"),
+  updateMe: (body: { fullName?: string; phone?: string }) =>
+    request<UserResponse>("/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+};
+
 // ── Health ─────────────────────────────────────────────────────────────────
 
 export const healthApi = {
@@ -54,7 +69,18 @@ export const healthApi = {
 
 export const propertiesApi = {
   list: () => request<PropertyResponse[]>("/properties"),
-  get: (id: string) => request<PropertyResponse>(`/properties/${id}`),
+  get: (id: string) => request<PropertyDetailResponse>(`/properties/${id}`),
+  create: (body: { name: string; address: string; city: string; totalUnits: number }) =>
+    request<PropertyResponse>("/properties", { method: "POST", body: JSON.stringify(body) }),
+  getUnits: (propertyId: string) => request<UnitResponse[]>(`/properties/${propertyId}/units`),
+  createUnit: (
+    propertyId: string,
+    body: { unitNumber: string; floor?: number | null; bedrooms: number; rentAmount: number }
+  ) =>
+    request<UnitResponse>(`/properties/${propertyId}/units`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 // ── Leases ─────────────────────────────────────────────────────────────────
@@ -74,7 +100,10 @@ export const maintenanceApi = {
     return request<MaintenanceRequestResponse[]>(`/maintenance-requests${qs ? `?${qs}` : ""}`);
   },
 
-  get: (id: string) => request<MaintenanceRequestResponse>(`/maintenance-requests/${id}`),
+  get: (id: string) => request<MaintenanceRequestDetailResponse>(`/maintenance-requests/${id}`),
+
+  getPhotoUrl: (id: string) =>
+    request<{ url: string }>(`/maintenance-requests/${id}/photo-url`),
 
   create: (body: {
     unitId: string;

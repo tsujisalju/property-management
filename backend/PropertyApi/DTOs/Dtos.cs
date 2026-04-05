@@ -8,9 +8,13 @@ public record HealthResponse(string Status, string Environment, string Database,
 
 public record UserResponse(Guid Id, string FullName, string Email, string? Phone, string Role, DateTime CreatedAt);
 
+public record UpdateUserRequest(string? FullName, string? Phone);
+
 // ── Properties ─────────────────────────────────────────────────────────────
 
 public record PropertyResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt);
+
+public record PropertyDetailResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt, IEnumerable<UnitResponse> Units);
 
 public record CreatePropertyRequest(
     string Name,
@@ -48,6 +52,7 @@ public record MaintenanceRequestResponse(
     Guid Id,
     Guid UnitId,
     string UnitNumber,
+    string PropertyName,
     Guid TenantId,
     string TenantName,
     Guid? AssignedTo,
@@ -60,6 +65,26 @@ public record MaintenanceRequestResponse(
     string? S3PhotoKey,
     DateTime CreatedAt,
     DateTime? ResolvedAt
+);
+
+public record MaintenanceRequestDetailResponse(
+    Guid Id,
+    Guid UnitId,
+    string UnitNumber,
+    string PropertyName,
+    Guid TenantId,
+    string TenantName,
+    Guid? AssignedTo,
+    string? AssigneeName,
+    string Title,
+    string? Description,
+    string Category,
+    string Priority,
+    string Status,
+    string? S3PhotoKey,
+    DateTime CreatedAt,
+    DateTime? ResolvedAt,
+    IEnumerable<CommentResponse> Comments
 );
 
 public record CreateMaintenanceRequestRequest(

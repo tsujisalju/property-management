@@ -97,7 +97,7 @@ property-management/
 
 | Member | Role in app | Feature area |
 |---|---|---|
-| Member 1 | Property manager | Maintenance scheduling |
-| Member 2 | Tenant | Issue reporting, portal |
-| Member 3 | Finance / admin | Billing, reports |
-| Member 4 | Maintenance staff | Work order updates |
+| Qayyum | Property manager | Maintenance scheduling |
+| Ahmed | Tenant | Issue reporting, portal |
+| Teshwindev | Finance / admin | Billing, reports |
+| Hayyan | Maintenance staff | Work order updates |

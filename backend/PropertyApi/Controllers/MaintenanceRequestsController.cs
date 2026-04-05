@@ -8,7 +8,7 @@ namespace PropertyApi.Controllers;
 
 [ApiController]
 [Route("api/maintenance-requests")]
-public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : ControllerBase
+public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurrentUserService currentUser) : ControllerBase
 {
     // GET /api/maintenance-requests
     // Managers see all requests for their properties.
@@ -18,7 +18,7 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? unitId)
     {
         var query = db.MaintenanceRequests
-            .Include(r => r.Unit)
+            .Include(r => r.Unit).ThenInclude(u => u.Property)
             .Include(r => r.Tenant)
             .Include(r => r.Assignee)
             .AsQueryable();
@@ -42,14 +42,26 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
     public async Task<IActionResult> GetById(Guid id)
     {
         var request = await db.MaintenanceRequests
-            .Include(r => r.Unit)
+            .Include(r => r.Unit).ThenInclude(u => u.Property)
             .Include(r => r.Tenant)
             .Include(r => r.Assignee)
             .Include(r => r.Comments).ThenInclude(c => c.Author)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (request is null) return NotFound();
-        return Ok(ToResponse(request));
+        return Ok(ToDetailResponse(request));
+    }
+
+    // GET /api/maintenance-requests/{id}/photo-url
+    [HttpGet("{id:guid}/photo-url")]
+    public async Task<IActionResult> GetPhotoUrl(Guid id)
+    {
+        var request = await db.MaintenanceRequests.FindAsync(id);
+        if (request is null) return NotFound();
+        if (request.S3PhotoKey is null) return NotFound("No photo attached.");
+
+        var url = await s3.GetDownloadUrlAsync(request.S3PhotoKey);
+        return Ok(new { url });
     }
 
     // POST /api/maintenance-requests
@@ -59,13 +71,12 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
         var unit = await db.Units.FindAsync(dto.UnitId);
         if (unit is null) return BadRequest("Unit not found.");
 
-        // TODO: replace hardcoded tenant with the authenticated user's ID from JWT
-        var placeholderTenantId = Guid.Empty;
+        var tenant = await currentUser.RequireCurrentUserAsync();
 
         var request = new MaintenanceRequest
         {
             UnitId      = dto.UnitId,
-            TenantId    = placeholderTenantId,
+            TenantId    = tenant.Id,
             Title       = dto.Title,
             Description = dto.Description,
             Category    = dto.Category,
@@ -103,13 +114,12 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
         var request = await db.MaintenanceRequests.FindAsync(id);
         if (request is null) return NotFound();
 
-        // TODO: replace with authenticated user ID from JWT
-        var placeholderAuthorId = Guid.Empty;
+        var author = await currentUser.RequireCurrentUserAsync();
 
         var comment = new MaintenanceComment
         {
             RequestId = id,
-            AuthorId  = placeholderAuthorId,
+            AuthorId  = author.Id,
             Body      = dto.Body,
         };
 
@@ -133,12 +143,25 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3) : Con
         return Ok(new PresignedUrlResponse(uploadUrl, key));
     }
 
-    // ── Mapping helper ───────────────────────────────────────────────────────
+    // ── Mapping helpers ──────────────────────────────────────────────────────
     private static MaintenanceRequestResponse ToResponse(MaintenanceRequest r) => new(
         r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
+        r.Unit?.Property?.Name ?? "",
         r.TenantId, r.Tenant?.FullName ?? "",
         r.AssignedTo, r.Assignee?.FullName,
         r.Title, r.Description, r.Category, r.Priority, r.Status,
         r.S3PhotoKey, r.CreatedAt, r.ResolvedAt
+    );
+
+    private static MaintenanceRequestDetailResponse ToDetailResponse(MaintenanceRequest r) => new(
+        r.Id, r.UnitId, r.Unit?.UnitNumber ?? "",
+        r.Unit?.Property?.Name ?? "",
+        r.TenantId, r.Tenant?.FullName ?? "",
+        r.AssignedTo, r.Assignee?.FullName,
+        r.Title, r.Description, r.Category, r.Priority, r.Status,
+        r.S3PhotoKey, r.CreatedAt, r.ResolvedAt,
+        r.Comments?.OrderBy(c => c.CreatedAt)
+            .Select(c => new CommentResponse(c.Id, c.AuthorId, c.Author?.FullName ?? "Unknown", c.Body, c.CreatedAt))
+            ?? Enumerable.Empty<CommentResponse>()
     );
 }

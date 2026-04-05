@@ -24,7 +24,7 @@ The project is assessed across two tasks:
 
 | Layer | Technology | Where it runs |
 |---|---|---|
-| Frontend | Next.js 15, TypeScript, React 19, Tailwind CSS | Vercel (prod) / localhost:3000 (dev) |
+| Frontend | Next.js 16, TypeScript, React 19, Tailwind CSS | Vercel (prod) / localhost:3000 (dev) |
 | Backend | ASP.NET 8, C# | AWS EC2 in Docker (prod) / localhost:8080 (dev) |
 | Database | PostgreSQL 15 via EF Core | AWS RDS (prod) / Docker Compose (dev) |
 | File storage | AWS S3 | Pre-signed URL pattern |
