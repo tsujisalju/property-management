@@ -8,7 +8,7 @@ namespace PropertyApi.Controllers;
 
 [ApiController]
 [Route("api/properties")]
-public class PropertiesController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
+public class PropertiesController(AppDbContext db, ICurrentUserService currentUser, IS3Service s3) : ControllerBase
 {
     // GET /api/properties — returns properties managed by the current user
     [HttpGet]
@@ -57,6 +57,48 @@ public class PropertiesController(AppDbContext db, ICurrentUserService currentUs
         return CreatedAtAction(nameof(GetById), new { id = property.Id }, ToResponse(property));
     }
 
+    // PATCH /api/properties/{id}
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePropertyRequest dto)
+    {
+        var property = await db.Properties.FindAsync(id);
+        if (property is null) return NotFound();
+
+        if (dto.Name       is not null) property.Name       = dto.Name;
+        if (dto.Address    is not null) property.Address    = dto.Address;
+        if (dto.City       is not null) property.City       = dto.City;
+        if (dto.TotalUnits is not null) property.TotalUnits = dto.TotalUnits.Value;
+        if (dto.S3PhotoKey is not null) property.S3PhotoKey = dto.S3PhotoKey;
+
+        await db.SaveChangesAsync();
+        return Ok(ToResponse(property));
+    }
+
+    // POST /api/properties/{id}/photo-upload-url
+    [HttpPost("{id:guid}/photo-upload-url")]
+    public async Task<IActionResult> GetPhotoUploadUrl(Guid id, [FromQuery] string contentType = "image/jpeg")
+    {
+        var property = await db.Properties.FindAsync(id);
+        if (property is null) return NotFound();
+
+        var key = $"properties/{id}/photo-{Guid.NewGuid()}.jpg";
+        var uploadUrl = await s3.GetUploadUrlAsync(key, contentType);
+
+        return Ok(new PresignedUrlResponse(uploadUrl, key));
+    }
+
+    // GET /api/properties/{id}/photo-url
+    [HttpGet("{id:guid}/photo-url")]
+    public async Task<IActionResult> GetPhotoUrl(Guid id)
+    {
+        var property = await db.Properties.FindAsync(id);
+        if (property is null) return NotFound();
+        if (property.S3PhotoKey is null) return NotFound("No photo attached.");
+
+        var url = await s3.GetDownloadUrlAsync(property.S3PhotoKey);
+        return Ok(new { url });
+    }
+
     // GET /api/properties/{id}/units
     [HttpGet("{id:guid}/units")]
     public async Task<IActionResult> GetUnits(Guid id)
@@ -98,12 +140,12 @@ public class PropertiesController(AppDbContext db, ICurrentUserService currentUs
     // ── Mapping helpers ───────────────────────────────────────────────────────
 
     private static PropertyResponse ToResponse(Property p) => new(
-        p.Id, p.Name, p.Address, p.City, p.TotalUnits, p.CreatedAt
+        p.Id, p.Name, p.Address, p.City, p.TotalUnits, p.S3PhotoKey, p.CreatedAt
     );
 
     private static PropertyDetailResponse ToDetailResponse(Property p) => new(
-        p.Id, p.Name, p.Address, p.City, p.TotalUnits, p.CreatedAt,
-        p.Units.Select(ToUnitResponse)
+        p.Id, p.Name, p.Address, p.City, p.TotalUnits, p.S3PhotoKey, p.CreatedAt,
+        p.Units.OrderBy(u => u.UnitNumber).Select(ToUnitResponse)
     );
 
     private static UnitResponse ToUnitResponse(Unit u) => new(

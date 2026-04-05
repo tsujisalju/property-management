@@ -72,6 +72,12 @@ export const propertiesApi = {
   get: (id: string) => request<PropertyDetailResponse>(`/properties/${id}`),
   create: (body: { name: string; address: string; city: string; totalUnits: number }) =>
     request<PropertyResponse>("/properties", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: { name?: string; address?: string; city?: string; totalUnits?: number; s3PhotoKey?: string }) =>
+    request<PropertyResponse>(`/properties/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  getPhotoUploadUrl: (id: string, contentType = "image/jpeg") =>
+    request<PresignedUrlResponse>(`/properties/${id}/photo-upload-url?contentType=${encodeURIComponent(contentType)}`, { method: "POST" }),
+  getPhotoUrl: (id: string) =>
+    request<{ url: string }>(`/properties/${id}/photo-url`),
   getUnits: (propertyId: string) => request<UnitResponse[]>(`/properties/${propertyId}/units`),
   createUnit: (
     propertyId: string,

@@ -27,6 +27,7 @@ public class Property
     [Required] public string Address { get; set; } = "";
     [Required] public string City { get; set; } = "";
     public int TotalUnits { get; set; }
+    [Column("s3_photo_key")] public string? S3PhotoKey { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey(nameof(ManagerId))]
