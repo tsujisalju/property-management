@@ -12,15 +12,23 @@ public record UpdateUserRequest(string? FullName, string? Phone);
 
 // ── Properties ─────────────────────────────────────────────────────────────
 
-public record PropertyResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt);
+public record PropertyResponse(Guid Id, string Name, string Address, string City, int TotalUnits, string? S3PhotoKey, DateTime CreatedAt);
 
-public record PropertyDetailResponse(Guid Id, string Name, string Address, string City, int TotalUnits, DateTime CreatedAt, IEnumerable<UnitResponse> Units);
+public record PropertyDetailResponse(Guid Id, string Name, string Address, string City, int TotalUnits, string? S3PhotoKey, DateTime CreatedAt, IEnumerable<UnitResponse> Units);
 
 public record CreatePropertyRequest(
     string Name,
     string Address,
     string City,
     int TotalUnits
+);
+
+public record UpdatePropertyRequest(
+    string? Name,
+    string? Address,
+    string? City,
+    int? TotalUnits,
+    string? S3PhotoKey
 );
 
 // ── Units ──────────────────────────────────────────────────────────────────

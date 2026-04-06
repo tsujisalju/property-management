@@ -36,6 +36,7 @@ export interface PropertyResponse {
   address: string;
   city: string;
   totalUnits: number;
+  s3PhotoKey: string | null;
   createdAt: string;
 }
 

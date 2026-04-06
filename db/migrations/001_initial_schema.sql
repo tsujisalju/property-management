@@ -26,8 +26,9 @@ CREATE TABLE properties (
     name        VARCHAR(255) NOT NULL,
     address     TEXT NOT NULL,
     city        VARCHAR(100) NOT NULL,
-    total_units INT NOT NULL DEFAULT 0,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    total_units  INT NOT NULL DEFAULT 0,
+    s3_photo_key VARCHAR(512),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE units (
