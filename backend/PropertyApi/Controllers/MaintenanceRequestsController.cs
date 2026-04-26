@@ -15,7 +15,7 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
     // Tenants see only their own requests.
     // Maintenance staff see requests assigned to them.
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? unitId)
+    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? unitId, [FromQuery] Guid? assignedTo)
     {
         var query = db.MaintenanceRequests
             .Include(r => r.Unit).ThenInclude(u => u.Property)
@@ -28,6 +28,9 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
 
         if (unitId is not null)
             query = query.Where(r => r.UnitId == unitId);
+
+        if (assignedTo is not null)
+            query = query.Where(r => r.AssignedTo == assignedTo);
 
         var results = await query
             .OrderByDescending(r => r.CreatedAt)

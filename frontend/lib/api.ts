@@ -99,7 +99,9 @@ export const leasesApi = {
 // ── Maintenance requests ────────────────────────────────────────────────────
 
 export const maintenanceApi = {
-  list: (params?: { status?: string; unitId?: string }) => {
+  //list: (params?: { status?: string; unitId?: string }) => {
+  //allows filtering by assignee
+  list: (params?: { status?: string; unitId?: string; assignedTo?: string }) => {
     const qs = new URLSearchParams(
       Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v))
     ).toString();
