@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { maintenanceApi } from "@/lib/api";
+import { maintenanceApi, usersApi } from "@/lib/api";
 import type {
   CommentResponse,
   MaintenanceRequestDetailResponse,
   RequestStatus,
+  UserResponse,
 } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PriorityBadge } from "@/components/ui/priority-badge";
-import { ArrowLeft, Building, DoorClosed } from "lucide-react";
+import { ArrowLeft, Building, DoorClosed, Pencil } from "lucide-react";
 import Link from "next/link";
 import { getInitials } from "@/lib/ui";
 
@@ -43,6 +44,11 @@ export default function MaintenanceRequestPage() {
 
   // Status update
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Assignee picker
+  const [staffList, setStaffList] = useState<UserResponse[]>([]);
+  const [staffOpen, setStaffOpen] = useState(false);
+  const [updatingAssignee, setUpdatingAssignee] = useState(false);
 
   // Comment form
   const [commentBody, setCommentBody] = useState("");
@@ -77,6 +83,41 @@ export default function MaintenanceRequestPage() {
       // silently keep old status on error
     } finally {
       setUpdatingStatus(false);
+    }
+  }
+
+  const fetchStaff = useCallback(() => {
+    if (staffList.length > 0) return;
+    usersApi
+      .list({ role: "maintenance_staff" })
+      .then(setStaffList)
+      .catch(() => {});
+  }, [staffList.length]);
+
+  function handleToggleStaffDropdown() {
+    if (!staffOpen) fetchStaff();
+    setStaffOpen((prev) => !prev);
+  }
+
+  async function handleAssign(staffId: string | null) {
+    if (!request || updatingAssignee) return;
+    setUpdatingAssignee(true);
+    setStaffOpen(false);
+    try {
+      if (staffId === null) {
+        await maintenanceApi.update(id, { clearAssignee: true });
+        setRequest((prev) => prev ? { ...prev, assignedTo: null, assigneeName: null } : prev);
+      } else {
+        await maintenanceApi.update(id, { assignedTo: staffId });
+        const chosen = staffList.find((s) => s.id === staffId);
+        setRequest((prev) =>
+          prev ? { ...prev, assignedTo: staffId, assigneeName: chosen?.fullName ?? null } : prev
+        );
+      }
+    } catch {
+      // silently keep old assignee on error
+    } finally {
+      setUpdatingAssignee(false);
     }
   }
 
@@ -332,9 +373,65 @@ export default function MaintenanceRequestPage() {
           {/* Assignee */}
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body gap-2">
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50">
-                Assigned To
-              </h3>
+              <div className="dropdown">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 cursor-pointer group w-fit"
+                  onClick={handleToggleStaffDropdown}
+                  disabled={updatingAssignee}
+                >
+                  {updatingAssignee ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    <>
+                      <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50 decoration-dotted underline-offset-2 group-hover:underline">
+                        Assigned To
+                      </h3>
+                      <Pencil className="size-3 text-base-content/30 group-hover:text-base-content/60" />
+                    </>
+                  )}
+                </button>
+
+                {staffOpen && (
+                  <ul className="dropdown-content menu rounded-box bg-base-100 shadow-md z-10 w-56 p-1 mt-1">
+                    {request.assignedTo && (
+                      <li>
+                        <button
+                          type="button"
+                          className="text-sm text-error"
+                          onClick={() => handleAssign(null)}
+                        >
+                          Unassign
+                        </button>
+                      </li>
+                    )}
+                    {staffList.length === 0 && (
+                      <li>
+                        <span className="text-sm text-base-content/40 italic px-3 py-2">
+                          No staff found
+                        </span>
+                      </li>
+                    )}
+                    {staffList.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-sm"
+                          onClick={() => handleAssign(s.id)}
+                        >
+                          <div className="avatar avatar-placeholder">
+                            <div className="bg-neutral text-neutral-content w-6 rounded-full text-xs">
+                              <span>{getInitials(s.fullName)}</span>
+                            </div>
+                          </div>
+                          {s.fullName}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               {request.assigneeName ? (
                 <div className="flex items-center gap-2">
                   <div className="avatar avatar-placeholder">

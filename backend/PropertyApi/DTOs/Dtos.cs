@@ -106,7 +106,8 @@ public record CreateMaintenanceRequestRequest(
 public record UpdateMaintenanceRequestRequest(
     string? Status,
     Guid? AssignedTo,
-    string? Priority
+    string? Priority,
+    bool? ClearAssignee
 );
 
 // ── Maintenance comments ────────────────────────────────────────────────────

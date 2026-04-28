@@ -103,7 +103,10 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
             request.Status = dto.Status;
             if (dto.Status == "resolved") request.ResolvedAt = DateTime.UtcNow;
         }
-        if (dto.AssignedTo is not null) request.AssignedTo = dto.AssignedTo;
+        if (dto.ClearAssignee == true)
+            request.AssignedTo = null;
+        else if (dto.AssignedTo is not null)
+            request.AssignedTo = dto.AssignedTo;
         if (dto.Priority is not null)   request.Priority = dto.Priority;
 
         await db.SaveChangesAsync();
