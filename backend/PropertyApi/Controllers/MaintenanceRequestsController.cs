@@ -10,6 +10,32 @@ namespace PropertyApi.Controllers;
 [Route("api/maintenance-requests")]
 public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurrentUserService currentUser) : ControllerBase
 {
+    private static readonly HashSet<string> AllowedImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    };
+
+    private static string NormalizeImageContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            return "image/jpeg";
+
+        var normalized = contentType.Trim().ToLowerInvariant();
+        return AllowedImageContentTypes.Contains(normalized) ? normalized : "image/jpeg";
+    }
+
+    private static string GetFileExtensionFromContentType(string contentType) => contentType switch
+    {
+        "image/png" => "png",
+        "image/webp" => "webp",
+        "image/gif" => "gif",
+        _ => "jpg",
+    };
+
     // GET /api/maintenance-requests
     // Managers see all requests for their properties.
     // Tenants see only their own requests.
@@ -101,7 +127,11 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
             if (dto.Status == "resolved") request.ResolvedAt = DateTime.UtcNow;
         }
         if (dto.AssignedTo is not null) request.AssignedTo = dto.AssignedTo;
-        if (dto.Priority is not null)   request.Priority = dto.Priority;
+        if (dto.Priority   is not null) request.Priority    = dto.Priority;
+        if (dto.Title       is not null) request.Title       = dto.Title;
+        if (dto.Description is not null) request.Description = dto.Description;
+        if (dto.Category    is not null) request.Category    = dto.Category;
+        if (dto.S3PhotoKey is not null) request.S3PhotoKey = dto.S3PhotoKey;
 
         await db.SaveChangesAsync();
         return NoContent();
@@ -137,10 +167,37 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
         var request = await db.MaintenanceRequests.FindAsync(id);
         if (request is null) return NotFound();
 
-        var key = $"maintenance/{id}/photo-{Guid.NewGuid()}.jpg";
-        var uploadUrl = await s3.GetUploadUrlAsync(key, contentType);
+        var normalizedContentType = NormalizeImageContentType(contentType);
+        var extension = GetFileExtensionFromContentType(normalizedContentType);
+        var key = $"maintenance/{id}/photo-{Guid.NewGuid()}.{extension}";
+        var uploadUrl = await s3.GetUploadUrlAsync(key, normalizedContentType);
 
         return Ok(new PresignedUrlResponse(uploadUrl, key));
+    }
+
+    // DELETE /api/maintenance-requests/{id}
+    // Only the tenant who created the request can delete it.
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var user = await currentUser.RequireCurrentUserAsync();
+
+        var request = await db.MaintenanceRequests
+            .Include(r => r.Comments)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (request is null) return NotFound();
+
+        // Security check: only the tenant who created it can delete it
+        if (request.TenantId != user.Id)
+            return Forbid();
+
+        // Remove comments first (child records) then the request
+        db.MaintenanceComments.RemoveRange(request.Comments);
+        db.MaintenanceRequests.Remove(request);
+        await db.SaveChangesAsync();
+
+        return NoContent(); // 204 - success
     }
 
     // ── Mapping helpers ──────────────────────────────────────────────────────

@@ -87,7 +87,28 @@ export const propertiesApi = {
 
 export const leasesApi = {
   list: (unitId?: string) =>
-    request<LeaseResponse[]>(`/leases${unitId ? `?unitId=${unitId}` : ""}`),
+        request<LeaseResponse[]>(`/leases${unitId ? `?unitId=${unitId}` : ""}`),
+
+    // Added by Tenant role
+
+    get: (id: string) =>
+        request<LeaseResponse>(`/leases/${id}`),
+
+    create: (body: {
+        unitId: string;
+        startDate: string;
+        endDate: string;
+        monthlyRent: number;
+    }) =>
+        request<LeaseResponse>("/leases", {
+            method: "POST",
+            body: JSON.stringify(body),
+        }),
+
+    terminate: (id: string) =>
+        request<void>(`/leases/${id}/terminate`, {
+            method: "PATCH",
+        }),
 };
 
 // ── Maintenance requests ────────────────────────────────────────────────────
@@ -133,7 +154,27 @@ export const maintenanceApi = {
       `/maintenance-requests/${id}/photo-upload-url?contentType=${encodeURIComponent(contentType)}`,
       { method: "POST" }
     ),
-};
+
+  delete: (id: string) =>
+    request<void>(`/maintenance-requests/${id}`, {
+      method: "DELETE",
+    }),
+
+    tenantUpdate: (
+    id: string,
+    body: {
+      title?: string;
+      description?: string;
+      category?: string;
+      priority?: string;
+      s3PhotoKey?: string;
+    }
+  ) =>
+    request<void>(`/maintenance-requests/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  };
 
 // ── Invoices ───────────────────────────────────────────────────────────────
 
@@ -152,11 +193,21 @@ export const budgetsApi = {
 // ── S3 direct upload helper ────────────────────────────────────────────────
 // Usage: first call maintenanceApi.getPhotoUploadUrl(), then pass the result here.
 
-export async function uploadFileToS3(uploadUrl: string, file: File): Promise<void> {
+export async function uploadFileToS3(
+  uploadUrl: string,
+  file: File,
+  contentType?: string
+): Promise<void> {
+  const normalizedType = contentType?.trim() || file.type?.trim() || "image/jpeg";
   const res = await fetch(uploadUrl, {
     method: "PUT",
-    headers: { "Content-Type": file.type },
+    headers: { "Content-Type": normalizedType },
     body: file,
   });
-  if (!res.ok) throw new Error(`S3 upload failed: ${res.statusText}`);
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => "");
+    throw new Error(
+      `S3 upload failed (${res.status} ${res.statusText}). ${errorBody}`.trim()
+    );
+  }
 }
