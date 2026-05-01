@@ -6,10 +6,12 @@ import {
   AuthenticationDetails,
 } from "amazon-cognito-identity-js";
 
-const pool = new CognitoUserPool({
-  UserPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID!,
-  ClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
-});
+function getPool(): CognitoUserPool {
+  return new CognitoUserPool({
+    UserPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID!,
+    ClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
+  });
+}
 
 export interface CognitoTokens {
   idToken: string;
@@ -20,6 +22,7 @@ export function signIn(
   email: string,
   password: string
 ): Promise<CognitoTokens> {
+  const pool = getPool();
   return new Promise((resolve, reject) => {
     const user = new CognitoUser({ Username: email, Pool: pool });
     const authDetails = new AuthenticationDetails({
@@ -42,5 +45,5 @@ export function signIn(
 }
 
 export function signOut(): void {
-  pool.getCurrentUser()?.signOut();
+  getPool().getCurrentUser()?.signOut();
 }
