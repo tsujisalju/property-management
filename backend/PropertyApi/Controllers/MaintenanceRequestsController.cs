@@ -8,7 +8,7 @@ namespace PropertyApi.Controllers;
 
 [ApiController]
 [Route("api/maintenance-requests")]
-public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurrentUserService currentUser) : ControllerBase
+public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurrentUserService currentUser, IEmailService email) : ControllerBase
 {
     private static readonly HashSet<string> AllowedImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -114,6 +114,19 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
 
         db.MaintenanceRequests.Add(request);
         await db.SaveChangesAsync();
+
+        try
+        {
+            await email.SendAsync(
+                tenant.Email,
+                "Maintenance Request Received",
+                $"<h2>Your request has been received.</h2>" +
+                $"<p><strong>{request.Title}</strong> — {request.Category}, {request.Priority} priority</p>" +
+                $"<p>We'll update you as work progresses.</p>"
+            );
+        }
+        catch { /* SES unavailable in dev — swallow */ }
+
         return CreatedAtAction(nameof(GetById), new { id = request.Id }, request.Id);
     }
 

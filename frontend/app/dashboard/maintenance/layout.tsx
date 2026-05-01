@@ -6,5 +6,5 @@ export default function MaintenanceLayout({
 }: {
   children: ReactNode;
 }) {
-  return <RoleGuard allowedRoles={["manager"]}>{children}</RoleGuard>;
+  return <RoleGuard allowedRoles={["manager", "tenant"]}>{children}</RoleGuard>;
 }
