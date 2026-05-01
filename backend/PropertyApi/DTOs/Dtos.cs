@@ -44,7 +44,18 @@ public record CreateUnitRequest(
 
 // ── Leases ─────────────────────────────────────────────────────────────────
 
-public record LeaseResponse(Guid Id, Guid UnitId, Guid TenantId, string TenantName, DateOnly StartDate, DateOnly EndDate, decimal MonthlyRent, string Status);
+public record LeaseResponse(
+    Guid Id,
+    Guid UnitId,
+    string UnitNumber,
+    string PropertyName,
+    Guid TenantId,
+    string TenantName,
+    DateOnly StartDate,
+    DateOnly EndDate,
+    decimal MonthlyRent,
+    string Status
+);
 
 public record CreateLeaseRequest(
     Guid UnitId,
@@ -107,9 +118,12 @@ public record UpdateMaintenanceRequestRequest(
     string? Status,
     Guid? AssignedTo,
     string? Priority,
-    bool? ClearAssignee
+    bool? ClearAssignee,
+    string? Title,
+    string? Description,
+    string? Category,
+    string? S3PhotoKey
 );
-
 // ── Maintenance comments ────────────────────────────────────────────────────
 
 public record CommentResponse(Guid Id, Guid AuthorId, string AuthorName, string Body, DateTime CreatedAt);
