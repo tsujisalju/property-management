@@ -62,13 +62,23 @@ public class LeasesController(
 
     // ── POST /api/leases ──────────────────────────────────────────────────
     // Creates a lease and marks the unit as occupied.
+    // Managers specify the tenant via dto.TenantId.
+    // Tenants always lease as themselves (JWT user).
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateLeaseRequest dto)
     {
-        // Step 1: get the logged-in user (throws 401 if missing)
-        var tenant = await currentUser.RequireCurrentUserAsync();
+        var caller = await currentUser.GetCurrentUserAsync();
 
-        // Step 2: find the unit
+        Guid tenantId;
+        if (caller is not null && caller.Role == "manager" && dto.TenantId != Guid.Empty)
+            tenantId = dto.TenantId;
+        else if (caller is not null)
+            tenantId = caller.Id;
+        else if (dto.TenantId != Guid.Empty)
+            tenantId = dto.TenantId; // auth stubbed in dev — accept dto value
+        else
+            return BadRequest("TenantId is required.");
+
         var unit = await db.Units
             .Include(u => u.Property)
             .FirstOrDefaultAsync(u => u.Id == dto.UnitId);
@@ -76,39 +86,43 @@ public class LeasesController(
         if (unit is null)
             return BadRequest("Unit not found.");
 
-        // Step 3: make sure the unit is actually available
         if (unit.Status != "vacant")
             return BadRequest($"Unit is not available (status: {unit.Status}).");
 
-        // Step 4: create the lease record
         var lease = new Lease
         {
-            UnitId = dto.UnitId,
-            TenantId = tenant.Id,   // always use the JWT user, not dto
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
+            UnitId      = dto.UnitId,
+            TenantId    = tenantId,
+            StartDate   = dto.StartDate,
+            EndDate     = dto.EndDate,
             MonthlyRent = dto.MonthlyRent,
-            Status = "active",
+            Status      = "active",
         };
 
-        // Step 5: sync unit status
         unit.Status = "occupied";
-
-        // Step 6: save both changes in ONE transaction
         db.Leases.Add(lease);
         await db.SaveChangesAsync();
 
-        // Step 7: send welcome email via SES
-        await email.SendAsync(
-            tenant.Email,
-            "Lease Confirmed",
-            $"<h2>Your lease has been confirmed.</h2>" +
-            $"<p>Unit <strong>{unit.UnitNumber}</strong> at {unit.Property?.Name}</p>" +
-            $"<p>From {lease.StartDate} to {lease.EndDate} at RM {lease.MonthlyRent}/month.</p>"
-        );
+        // Reload with nav properties so ToResponse can map them
+        var created = await db.Leases
+            .Include(l => l.Unit).ThenInclude(u => u.Property)
+            .Include(l => l.Tenant)
+            .FirstAsync(l => l.Id == lease.Id);
 
-        // Step 8: return 201 Created with the new lease
-        return CreatedAtAction(nameof(GetById), new { id = lease.Id }, ToResponse(lease));
+        // Best-effort email — SES may not be configured in dev
+        try
+        {
+            await email.SendAsync(
+                created.Tenant.Email,
+                "Lease Confirmed",
+                $"<h2>Your lease has been confirmed.</h2>" +
+                $"<p>Unit <strong>{unit.UnitNumber}</strong> at {unit.Property?.Name}</p>" +
+                $"<p>From {lease.StartDate} to {lease.EndDate} at RM {lease.MonthlyRent}/month.</p>"
+            );
+        }
+        catch { /* SES unavailable in dev */ }
+
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToResponse(created));
     }
 
     // ── PATCH /api/leases/{id}/terminate ──────────────────────────────────

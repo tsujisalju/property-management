@@ -5,15 +5,9 @@ import { Calendar, DoorClosed, Wallet } from "lucide-react";
 
 interface LeaseCardProps {
     lease: LeaseResponse;
-    onTerminate: () => void;
-    isTerminating: boolean;
 }
 
-export default function LeaseCard({
-    lease,
-    onTerminate,
-    isTerminating,
-}: LeaseCardProps) {
+export default function LeaseCard({ lease }: LeaseCardProps) {
     const leaseDisplay = lease as LeaseResponse & {
         unitNumber?: string;
         propertyName?: string;
@@ -90,21 +84,6 @@ export default function LeaseCard({
                     </div>
                 </div>
 
-                {lease.status === "active" && (
-                    <div className="card-actions justify-end mt-4">
-                        <button
-                            className="btn btn-error btn-sm btn-outline"
-                            onClick={onTerminate}
-                            disabled={isTerminating}
-                        >
-                            {isTerminating ? (
-                                <span className="loading loading-spinner loading-xs" />
-                            ) : (
-                                "Terminate Lease"
-                            )}
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     );
