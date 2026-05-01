@@ -129,12 +129,15 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
             request.Status = dto.Status;
             if (dto.Status == "resolved") request.ResolvedAt = DateTime.UtcNow;
         }
-        if (dto.AssignedTo is not null) request.AssignedTo = dto.AssignedTo;
-        if (dto.Priority   is not null) request.Priority    = dto.Priority;
+        if (dto.ClearAssignee == true)
+            request.AssignedTo = null;
+        else if (dto.AssignedTo is not null)
+            request.AssignedTo = dto.AssignedTo;
+        if (dto.Priority    is not null) request.Priority    = dto.Priority;
         if (dto.Title       is not null) request.Title       = dto.Title;
         if (dto.Description is not null) request.Description = dto.Description;
         if (dto.Category    is not null) request.Category    = dto.Category;
-        if (dto.S3PhotoKey is not null) request.S3PhotoKey = dto.S3PhotoKey;
+        if (dto.S3PhotoKey  is not null) request.S3PhotoKey  = dto.S3PhotoKey;
 
         await db.SaveChangesAsync();
         return NoContent();

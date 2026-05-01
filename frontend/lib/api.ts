@@ -57,6 +57,12 @@ export const usersApi = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  list: (params?: { role?: string }) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v))
+    ).toString();
+    return request<UserResponse[]>(`/users${qs ? `?${qs}` : ""}`);
+  },
 };
 
 // ── Health ─────────────────────────────────────────────────────────────────
@@ -144,7 +150,7 @@ export const maintenanceApi = {
 
   update: (
     id: string,
-    body: { status?: string; assignedTo?: string; priority?: string }
+    body: { status?: string; assignedTo?: string; priority?: string; clearAssignee?: boolean }
   ) =>
     request<void>(`/maintenance-requests/${id}`, {
       method: "PATCH",

@@ -118,6 +118,7 @@ public record UpdateMaintenanceRequestRequest(
     string? Status,
     Guid? AssignedTo,
     string? Priority,
+    bool? ClearAssignee,
     string? Title,
     string? Description,
     string? Category,

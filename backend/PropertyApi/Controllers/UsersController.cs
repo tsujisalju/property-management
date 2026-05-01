@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using PropertyApi.DTOs;
 using PropertyApi.Services;
@@ -28,5 +29,19 @@ public class UsersController(ICurrentUserService currentUser, AppDbContext db) :
         if (dto.Phone is not null)    user.Phone    = dto.Phone;
         await db.SaveChangesAsync();
         return Ok(new UserResponse(user.Id, user.FullName, user.Email, user.Phone, user.Role, user.CreatedAt));
+    }
+
+    // GET /api/users?role=maintenance_staff
+    [HttpGet]
+    public async Task<IActionResult> ListByRole([FromQuery] string? role)
+    {
+        var query = db.Users.AsQueryable();
+        if (role is not null)
+            query = query.Where(u => u.Role == role);
+        var users = await query
+            .OrderBy(u => u.FullName)
+            .Select(u => new UserResponse(u.Id, u.FullName, u.Email, u.Phone, u.Role, u.CreatedAt))
+            .ToListAsync();
+        return Ok(users);
     }
 }
