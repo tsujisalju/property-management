@@ -108,6 +108,7 @@ export const leasesApi = {
 
     create: (body: {
         unitId: string;
+        tenantId: string;
         startDate: string;
         endDate: string;
         monthlyRent: number;
