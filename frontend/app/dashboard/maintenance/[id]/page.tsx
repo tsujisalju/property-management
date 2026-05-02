@@ -38,8 +38,10 @@ export default function MaintenanceRequestPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const router = useRouter();
-  const backHref = "/dashboard/maintenance";
-  const backLabel = "Maintenance Requests";
+  const backHrefManager = "/dashboard/maintenance";
+  const backLabelManager = "Maintenance Requests";
+  const backHrefTenant = "/dashboard/tenant";
+  const backLabelTenant = "Tenant Portal";
 
   const [request, setRequest] =
     useState<MaintenanceRequestDetailResponse | null>(null);
@@ -151,7 +153,7 @@ export default function MaintenanceRequestPage() {
     setIsDeleting(true);
     try {
       await maintenanceApi.delete(id);
-      router.push(backHref);
+      router.push(backHrefManager);
     } catch {
       setError("Failed to delete request.");
     } finally {
@@ -247,13 +249,25 @@ export default function MaintenanceRequestPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Back link */}
-      <Link
-        href={backHref}
-        className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        {backLabel}
-      </Link>
+      {user?.role == "manager" ? (
+        <Link
+          href={backHrefManager}
+          className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
+        >
+          <ArrowLeft className="size-4" />
+          {backLabelManager}
+        </Link>
+      ) : (
+        user?.role == "tenant" && (
+          <Link
+            href={backHrefTenant}
+            className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
+          >
+            <ArrowLeft className="size-4" />
+            {backLabelTenant}
+          </Link>
+        )
+      )}
 
       {/* Title */}
       <div>

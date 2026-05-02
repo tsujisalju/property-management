@@ -43,11 +43,16 @@ public class MaintenanceRequestsController(AppDbContext db, IS3Service s3, ICurr
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] Guid? unitId, [FromQuery] Guid? assignedTo)
     {
+        var caller = await currentUser.GetCurrentUserAsync();
+
         var query = db.MaintenanceRequests
             .Include(r => r.Unit).ThenInclude(u => u.Property)
             .Include(r => r.Tenant)
             .Include(r => r.Assignee)
             .AsQueryable();
+
+        if (caller?.Role == "tenant")
+            query = query.Where(r => r.TenantId == caller.Id);
 
         if (status is not null)
             query = query.Where(r => r.Status == status);
