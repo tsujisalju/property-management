@@ -97,6 +97,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IS3Service, S3Service>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IInvoicePdfService, InvoicePdfService>();
+
 
 // ── CORS ───────────────────────────────────────────────────────────────────
 // Allows the Next.js dev server (localhost:3000) and Vercel production URL

@@ -110,6 +110,14 @@ export interface InvoiceResponse {
   createdAt: string;
 }
 
+export interface CreateInvoiceRequest {
+  leaseId: string;
+  type: string;
+  amount: number;
+  dueDate: string;
+  category?: string;
+}
+
 export interface BudgetResponse {
   id: string;
   propertyId: string;
@@ -118,6 +126,22 @@ export interface BudgetResponse {
   category: string;
   allocated: number;
   spent: number;
+}
+
+export interface UpsertBudgetRequest {
+  propertyId: string;
+  year: number;
+  month: number;
+  category: string;
+  allocated: number;
+}
+
+export interface RecordSpendRequest {
+  propertyId: string;
+  year: number;
+  month: number;
+  category: string;
+  amount: number;
 }
 
 export interface PresignedUrlResponse {

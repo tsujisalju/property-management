@@ -117,3 +117,7 @@ INSERT INTO users (cognito_sub, full_name, email, role) VALUES
   ('39aa75bc-20a1-70bb-4572-59b72f856ccf',  'Ahmed Saleh',  'tenant@dev.local',     'tenant'),
   ('491aa56c-0071-70d4-0847-a424c47aae21',  'Teshwindev',   'finance@dev.local',    'admin'),
   ('c96ac52c-f011-7097-f15c-ae69c75bfe6d',  'Hayyan',       'staff@dev.local',      'maintenance_staff');
+
+  ALTER TABLE budgets
+  ADD CONSTRAINT budgets_property_year_month_category_key
+  UNIQUE (property_id, year, month, category);
