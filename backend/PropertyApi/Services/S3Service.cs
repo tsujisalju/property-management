@@ -13,6 +13,9 @@ public interface IS3Service
 
     /// <summary>Deletes an object from S3.</summary>
     Task DeleteAsync(string key);
+
+    // 
+    Task UploadAsync(string key, byte[] data, string contentType);
 }
 
 public class S3Service(IAmazonS3 s3, IConfiguration config) : IS3Service
@@ -48,5 +51,18 @@ public class S3Service(IAmazonS3 s3, IConfiguration config) : IS3Service
     public async Task DeleteAsync(string key)
     {
         await s3.DeleteObjectAsync(_bucket, key);
+    }
+
+    public async Task UploadAsync(string key, byte[] data, string contentType)
+    {
+        using var stream = new MemoryStream(data);
+        var request = new PutObjectRequest
+        {
+            BucketName = _bucket,
+            Key = key,
+            InputStream = stream,
+            ContentType = contentType,
+        };
+        await s3.PutObjectAsync(request);
     }
 }

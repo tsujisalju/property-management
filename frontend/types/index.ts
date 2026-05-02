@@ -123,6 +123,39 @@ export interface PresignedUrlResponse {
   key: string;
 }
 
+export interface InvoiceResponse {
+    id: string;
+    leaseId: string;
+    type: 'rent' | 'maintenance' | 'deposit' | 'penalty';
+    amount: number;
+    dueDate: string;   // "YYYY-MM-DD" — DateOnly serialises this way
+    paidDate: string | null;
+    status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+    s3PdfKey: string | null;
+    createdAt: string;
+}
+
+export interface CreateInvoiceRequest {
+    leaseId: string;
+    type: string;
+    amount: number;
+    dueDate: string;   // "YYYY-MM-DD"
+}
+export interface UpsertBudgetRequest {
+    propertyId: string;
+    year: number;
+    month: number;
+    category: string;
+    allocated: number;
+}
+export interface RecordSpendRequest {
+    propertyId: string;
+    year: number;
+    month: number;
+    category: string;
+    amount: number;
+}
+
 // ── API error shape ────────────────────────────────────────────────────────
 
 export interface ApiError {

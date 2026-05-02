@@ -109,6 +109,14 @@ public record UpdateMaintenanceRequestRequest(
     string? Priority
 );
 
+// Finance — record-spend payload
+public record RecordSpendRequest(
+Guid PropertyId,
+int Year,
+int Month,
+string Category,   // plumbing | electrical | hvac | general
+decimal Amount);
+
 // ── Maintenance comments ────────────────────────────────────────────────────
 
 public record CommentResponse(Guid Id, Guid AuthorId, string AuthorName, string Body, DateTime CreatedAt);

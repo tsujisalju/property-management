@@ -29,6 +29,8 @@ services:
     working_dir: /app
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       - BACKEND_URL=http://backend:8080
       - NODE_ENV=development
