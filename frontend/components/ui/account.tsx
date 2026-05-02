@@ -3,15 +3,13 @@
 import { useAuth } from "@/context/AuthContext";
 import { getInitials } from "@/lib/ui";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function Account() {
   const { user: me, isLoading, logout } = useAuth();
-  const router = useRouter();
 
   async function handleLogout() {
     await logout();
-    router.push("/login");
+    window.location.replace("/login");
   }
 
   return (
