@@ -12,11 +12,31 @@ namespace PropertyApi.Controllers;
 public class UsersController(ICurrentUserService currentUser, AppDbContext db) : ControllerBase
 {
     // GET /api/users/me
+    // Auto-provisions a tenant DB record on first login if none exists for this Cognito sub.
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {
-        var user = await currentUser.GetCurrentUserAsync();
-        if (user is null) return NotFound();
+        var sub = HttpContext.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(sub)) return Unauthorized();
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.CognitoSub == sub);
+
+        if (user is null)
+        {
+            var email    = HttpContext.User.FindFirst("email")?.Value ?? "";
+            var fullName = HttpContext.User.FindFirst("name")?.Value
+                        ?? email;
+            user = new PropertyApi.Models.User
+            {
+                CognitoSub = sub,
+                Email      = email,
+                FullName   = fullName,
+                Role       = "tenant",
+            };
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+
         return Ok(new UserResponse(user.Id, user.FullName, user.Email, user.Phone, user.Role, user.CreatedAt));
     }
 

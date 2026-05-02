@@ -12,14 +12,15 @@ import type {
   UserResponse,
 } from "@/types";
 
-// Server-side: use BACKEND_URL (internal Docker/network address) to call the
-// backend directly — relative URLs are not valid in server-side fetch.
-// Client-side: use NEXT_PUBLIC_API_URL if set (production EC2 URL), otherwise
-// "" so the Next.js rewrite in next.config.ts proxies /api/* to the backend.
+// Server-side: use BACKEND_URL to reach the backend directly (relative URLs
+// are invalid in server-side fetch). Falls back to localhost for local dev.
+// Client-side: always use "" so /api/* goes through the Next.js rewrite in
+// next.config.ts — the rewrite proxies server-to-server, keeping HTTP off the
+// browser and avoiding mixed-content errors on the Vercel HTTPS deployment.
 const BASE =
   typeof window === "undefined"
-    ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080")
-    : (process.env.NEXT_PUBLIC_API_URL ?? "");
+    ? (process.env.BACKEND_URL ?? "http://localhost:8080")
+    : "";
 
 class ApiClientError extends Error {
   constructor(public status: number, message: string) {
