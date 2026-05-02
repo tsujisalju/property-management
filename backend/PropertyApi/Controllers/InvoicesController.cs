@@ -11,7 +11,8 @@ namespace PropertyApi.Controllers;
 public class InvoicesController(
     AppDbContext db,
     IS3Service s3,
-    IInvoicePdfService pdfService) : ControllerBase
+    IInvoicePdfService pdfService,
+    IEmailService email) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(
@@ -63,6 +64,45 @@ public class InvoicesController(
 
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();
+
+        // For maintenance invoices, increment budget spent for the given category
+        if (req.Type == "maintenance" && req.Category is not null)
+        {
+            var leaseWithUnit = await db.Leases
+                .Include(l => l.Unit)
+                .ThenInclude(u => u.Property)
+                .FirstOrDefaultAsync(l => l.Id == req.LeaseId);
+
+            var unit = leaseWithUnit?.Unit;
+            if (unit?.Property is not null)
+            {
+                var now = DateTime.UtcNow;
+                await db.Database.ExecuteSqlRawAsync("""
+                    UPDATE budgets
+                    SET    spent = spent + {0}
+                    WHERE  property_id = {1}
+                      AND  year        = {2}
+                      AND  month       = {3}
+                      AND  category    = {4}
+                    """,
+                    req.Amount, unit.Property.Id, now.Year, now.Month, req.Category);
+            }
+        }
+
+        // Payment reminder email — best-effort, SES may be unavailable in dev
+        try
+        {
+            var lease = await db.Leases
+                .Include(l => l.Tenant)
+                .FirstOrDefaultAsync(l => l.Id == req.LeaseId);
+            if (lease?.Tenant is not null)
+                await email.SendAsync(
+                    lease.Tenant.Email,
+                    "Invoice Due",
+                    $"<p>A new invoice of <strong>MYR {req.Amount:F2}</strong> ({req.Type}) is due on {req.DueDate}.</p>"
+                );
+        }
+        catch { /* swallow — SES unavailable in dev */ }
 
         return CreatedAtAction(nameof(GetById), new { id = invoice.Id }, ToResponse(invoice));
     }

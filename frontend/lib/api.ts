@@ -204,7 +204,8 @@ export const invoicesApi = {
         leaseId: string;
         type: string;
         amount: number;
-        dueDate: string; 
+        dueDate: string;
+        category?: string;
     }) =>
         request<InvoiceResponse>("/invoices", {
             method: "POST",

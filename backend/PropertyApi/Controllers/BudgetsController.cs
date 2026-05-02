@@ -38,6 +38,9 @@ public class BudgetsController(AppDbContext db) : ControllerBase
         if (propertyId == Guid.Empty)
             return BadRequest(new { error = "propertyId query parameter is required." });
 
+        if (req.Allocated < 0)
+            return BadRequest(new { error = "Allocated amount cannot be negative." });
+
         var propertyExists = await db.Properties.AnyAsync(p => p.Id == propertyId);
         if (!propertyExists)
             return BadRequest(new { error = "Property not found." });

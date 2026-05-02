@@ -142,7 +142,8 @@ public record CreateInvoiceRequest(
     Guid LeaseId,
     string Type,
     decimal Amount,
-    DateOnly DueDate
+    DateOnly DueDate,
+    string? Category   // required when Type == "maintenance"; used to auto-record budget spend
 );
 
 // ── Budgets ────────────────────────────────────────────────────────────────
