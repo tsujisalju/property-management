@@ -7,12 +7,16 @@ export const metadata: Metadata = {
   description: "Manage properties, tenants, maintenance and finances.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <html lang="en" suppressHydrationWarning>
-            <body className="bg-gray-50 text-gray-900 antialiased">
-                <AuthProvider>{children}</AuthProvider>
-            </body>
-        </html>
-    );
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" data-theme="light">
+      <body className="bg-gray-50 text-gray-900 antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
+    </html>
+  );
 }

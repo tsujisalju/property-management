@@ -12,11 +12,15 @@ import type {
     UserResponse,
 } from "@/types";
 
-
+// Server-side: use BACKEND_URL to reach the backend directly (relative URLs
+// are invalid in server-side fetch). Falls back to localhost for local dev.
+// Client-side: always use "" so /api/* goes through the Next.js rewrite in
+// next.config.ts — the rewrite proxies server-to-server, keeping HTTP off the
+// browser and avoiding mixed-content errors on the Vercel HTTPS deployment.
 const BASE =
-    typeof window === "undefined"
-        ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080")
-        : (process.env.NEXT_PUBLIC_API_URL ?? "");
+  typeof window === "undefined"
+    ? (process.env.BACKEND_URL ?? "http://localhost:8080")
+    : "";
 
 class ApiClientError extends Error {
     constructor(public status: number, message: string) {
@@ -47,12 +51,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 // ── Users
 
 export const usersApi = {
-    me: () => request<UserResponse>("/users/me"),
-    updateMe: (body: { fullName?: string; phone?: string }) =>
-        request<UserResponse>("/users/me", {
-            method: "PATCH",
-            body: JSON.stringify(body),
-        }),
+  me: () => request<UserResponse>("/users/me"),
+  updateMe: (body: { fullName?: string; phone?: string }) =>
+    request<UserResponse>("/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  list: (params?: { role?: string }) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v))
+    ).toString();
+    return request<UserResponse[]>(`/users${qs ? `?${qs}` : ""}`);
+  },
 };
 
 // ── Health
@@ -87,19 +97,39 @@ export const propertiesApi = {
 
 // ── Leases 
 export const leasesApi = {
-    list: (unitId?: string) =>
-        request<LeaseResponse[]>(`/leases${unitId ? `?unitId=${unitId}` : ""}`),
+  list: (unitId?: string) =>
+    request<LeaseResponse[]>(`/leases${unitId ? `?unitId=${unitId}` : ""}`),
+
+  get: (id: string) =>
+    request<LeaseResponse>(`/leases/${id}`),
+
+  create: (body: {
+    unitId: string;
+    tenantId: string;
+    startDate: string;
+    endDate: string;
+    monthlyRent: number;
+  }) =>
+    request<LeaseResponse>("/leases", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  terminate: (id: string) =>
+    request<void>(`/leases/${id}/terminate`, {
+      method: "PATCH",
+    }),
 };
 
 // ── Maintenance requests 
 
 export const maintenanceApi = {
-    list: (params?: { status?: string; unitId?: string }) => {
-        const qs = new URLSearchParams(
-            Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v))
-        ).toString();
-        return request<MaintenanceRequestResponse[]>(`/maintenance-requests${qs ? `?${qs}` : ""}`);
-    },
+  list: (params?: { status?: string; unitId?: string; assignedTo?: string }) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v))
+    ).toString();
+    return request<MaintenanceRequestResponse[]>(`/maintenance-requests${qs ? `?${qs}` : ""}`);
+  },
 
     get: (id: string) => request<MaintenanceRequestDetailResponse>(`/maintenance-requests/${id}`),
 
@@ -114,14 +144,14 @@ export const maintenanceApi = {
         priority: string;
     }) => request<string>("/maintenance-requests", { method: "POST", body: JSON.stringify(body) }),
 
-    update: (
-        id: string,
-        body: { status?: string; assignedTo?: string; priority?: string }
-    ) =>
-        request<void>(`/maintenance-requests/${id}`, {
-            method: "PATCH",
-            body: JSON.stringify(body),
-        }),
+  update: (
+    id: string,
+    body: { status?: string; assignedTo?: string; priority?: string; clearAssignee?: boolean }
+  ) =>
+    request<void>(`/maintenance-requests/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
     addComment: (id: string, body: string) =>
         request<string>(`/maintenance-requests/${id}/comments`, {
@@ -129,11 +159,31 @@ export const maintenanceApi = {
             body: JSON.stringify({ body }),
         }),
 
-    getPhotoUploadUrl: (id: string, contentType = "image/jpeg") =>
-        request<PresignedUrlResponse>(
-            `/maintenance-requests/${id}/photo-upload-url?contentType=${encodeURIComponent(contentType)}`,
-            { method: "POST" }
-        ),
+  getPhotoUploadUrl: (id: string, contentType = "image/jpeg") =>
+    request<PresignedUrlResponse>(
+      `/maintenance-requests/${id}/photo-upload-url?contentType=${encodeURIComponent(contentType)}`,
+      { method: "POST" }
+    ),
+
+  delete: (id: string) =>
+    request<void>(`/maintenance-requests/${id}`, {
+      method: "DELETE",
+    }),
+
+  tenantUpdate: (
+    id: string,
+    body: {
+      title?: string;
+      description?: string;
+      category?: string;
+      priority?: string;
+      s3PhotoKey?: string;
+    }
+  ) =>
+    request<void>(`/maintenance-requests/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 };
 
 // ── Invoices 
@@ -210,11 +260,21 @@ export const budgetsApi = {
 // ── S3 direct upload helper ────────────────────────────────────────────────
 // Usage: first call maintenanceApi.getPhotoUploadUrl(), then pass the result here.
 
-export async function uploadFileToS3(uploadUrl: string, file: File): Promise<void> {
-    const res = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-    });
-    if (!res.ok) throw new Error(`S3 upload failed: ${res.statusText}`);
+export async function uploadFileToS3(
+  uploadUrl: string,
+  file: File,
+  contentType?: string
+): Promise<void> {
+  const normalizedType = contentType?.trim() || file.type?.trim() || "image/jpeg";
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": normalizedType },
+    body: file,
+  });
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => "");
+    throw new Error(
+      `S3 upload failed (${res.status} ${res.statusText}). ${errorBody}`.trim()
+    );
+  }
 }

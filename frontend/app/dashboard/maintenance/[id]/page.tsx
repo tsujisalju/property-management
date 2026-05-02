@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
-import { maintenanceApi } from "@/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { maintenanceApi, usersApi } from "@/lib/api";
 import type {
   CommentResponse,
   MaintenanceRequestDetailResponse,
   RequestStatus,
+  UserResponse,
 } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PriorityBadge } from "@/components/ui/priority-badge";
-import { ArrowLeft, Building, DoorClosed } from "lucide-react";
+import { ArrowLeft, Building, DoorClosed, Pencil } from "lucide-react";
 import Link from "next/link";
 import { getInitials } from "@/lib/ui";
+import Image from "next/image";
 
 const STATUS_OPTIONS: { value: RequestStatus; label: string }[] = [
   { value: "open", label: "Open" },
@@ -33,6 +36,12 @@ function formatDate(iso: string) {
 
 export default function MaintenanceRequestPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const router = useRouter();
+  const backHrefManager = "/dashboard/maintenance";
+  const backLabelManager = "Maintenance Requests";
+  const backHrefTenant = "/dashboard/tenant";
+  const backLabelTenant = "Tenant Portal";
 
   const [request, setRequest] =
     useState<MaintenanceRequestDetailResponse | null>(null);
@@ -43,6 +52,18 @@ export default function MaintenanceRequestPage() {
 
   // Status update
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editPriority, setEditPriority] = useState("");
+
+  // Assignee picker
+  const [staffList, setStaffList] = useState<UserResponse[]>([]);
+  const [staffOpen, setStaffOpen] = useState(false);
+  const [updatingAssignee, setUpdatingAssignee] = useState(false);
 
   // Comment form
   const [commentBody, setCommentBody] = useState("");
@@ -77,6 +98,104 @@ export default function MaintenanceRequestPage() {
       // silently keep old status on error
     } finally {
       setUpdatingStatus(false);
+    }
+  }
+
+  const fetchStaff = useCallback(() => {
+    if (staffList.length > 0) return;
+    usersApi
+      .list({ role: "maintenance_staff" })
+      .then(setStaffList)
+      .catch(() => {});
+  }, [staffList.length]);
+
+  function handleToggleStaffDropdown() {
+    if (!staffOpen) fetchStaff();
+    setStaffOpen((prev) => !prev);
+  }
+
+  async function handleAssign(staffId: string | null) {
+    if (!request || updatingAssignee) return;
+    setUpdatingAssignee(true);
+    setStaffOpen(false);
+    try {
+      if (staffId === null) {
+        await maintenanceApi.update(id, { clearAssignee: true });
+        setRequest((prev) =>
+          prev ? { ...prev, assignedTo: null, assigneeName: null } : prev,
+        );
+      } else {
+        await maintenanceApi.update(id, { assignedTo: staffId });
+        const chosen = staffList.find((s) => s.id === staffId);
+        setRequest((prev) =>
+          prev
+            ? {
+                ...prev,
+                assignedTo: staffId,
+                assigneeName: chosen?.fullName ?? null,
+              }
+            : prev,
+        );
+      }
+    } catch {
+      // silently keep old assignee on error
+    } finally {
+      setUpdatingAssignee(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!request) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this request? This cannot be undone.",
+    );
+    if (!confirmed) return;
+    setIsDeleting(true);
+    try {
+      await maintenanceApi.delete(id);
+      router.push(backHrefManager);
+    } catch {
+      setError("Failed to delete request.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  function handleEditClick() {
+    if (!request) return;
+    setEditTitle(request.title);
+    setEditDescription(request.description ?? "");
+    setEditCategory(request.category);
+    setEditPriority(request.priority);
+    setIsEditing(true);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSubmittingEdit(true);
+    try {
+      await maintenanceApi.tenantUpdate(id, {
+        title: editTitle,
+        description: editDescription,
+        category: editCategory,
+        priority: editPriority,
+      });
+      setRequest((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: editTitle,
+              description: editDescription,
+              category: editCategory,
+              priority: editPriority as typeof prev.priority,
+            }
+          : prev,
+      );
+      setIsEditing(false);
+    } catch {
+      setError("Failed to update request.");
+    } finally {
+      setIsSubmittingEdit(false);
     }
   }
 
@@ -130,13 +249,25 @@ export default function MaintenanceRequestPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Back link */}
-      <Link
-        href="/dashboard/maintenance"
-        className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        Maintenance Requests
-      </Link>
+      {user?.role == "manager" ? (
+        <Link
+          href={backHrefManager}
+          className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
+        >
+          <ArrowLeft className="size-4" />
+          {backLabelManager}
+        </Link>
+      ) : (
+        user?.role == "tenant" && (
+          <Link
+            href={backHrefTenant}
+            className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
+          >
+            <ArrowLeft className="size-4" />
+            {backLabelTenant}
+          </Link>
+        )
+      )}
 
       {/* Title */}
       <div>
@@ -153,6 +284,24 @@ export default function MaintenanceRequestPage() {
             {request.category}
           </span>
         </div>
+        {user?.role === "tenant" && (
+          <div className="flex items-center gap-2 mt-3">
+            <button className="btn btn-sm btn-ghost" onClick={handleEditClick}>
+              Edit
+            </button>
+            <button
+              className="btn btn-sm btn-error btn-outline"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                "Delete"
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Meta row */}
@@ -207,17 +356,19 @@ export default function MaintenanceRequestPage() {
           {/* Photo */}
           {photoUrl && (
             <div className="card bg-base-100 shadow-sm overflow-hidden">
-              <div className="card-body pb-0">
+              <div className="card-body">
                 <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50">
                   Attached Photo
                 </h3>
               </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photoUrl}
-                alt="Maintenance photo"
-                className="w-full object-cover max-h-80"
-              />
+              <div className="relative w-full h-80 mb-4">
+                <Image
+                  src={photoUrl}
+                  alt="Maintenance photo"
+                  className="object-contain"
+                  fill
+                />
+              </div>
             </div>
           )}
 
@@ -227,13 +378,11 @@ export default function MaintenanceRequestPage() {
               <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50">
                 Comments ({comments.length})
               </h3>
-
               {comments.length === 0 && (
                 <p className="text-sm text-base-content/40 italic">
                   No comments yet.
                 </p>
               )}
-
               <div className="space-y-4">
                 {comments.map((c) => (
                   <div key={c.id} className="flex gap-3">
@@ -259,8 +408,6 @@ export default function MaintenanceRequestPage() {
                 ))}
                 <div ref={commentsEndRef} />
               </div>
-
-              {/* Add comment form */}
               <form
                 onSubmit={handleAddComment}
                 className="pt-2 border-t border-base-200 space-y-2"
@@ -299,22 +446,28 @@ export default function MaintenanceRequestPage() {
               <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50">
                 Status
               </h3>
-              <select
-                className="select select-bordered select-sm w-full"
-                value={request.status}
-                disabled={updatingStatus}
-                onChange={(e) =>
-                  handleStatusChange(e.target.value as RequestStatus)
-                }
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              {updatingStatus && (
-                <span className="loading loading-spinner loading-xs" />
+              {user?.role === "tenant" ? (
+                <StatusBadge status={request.status} />
+              ) : (
+                <>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={request.status}
+                    disabled={updatingStatus}
+                    onChange={(e) =>
+                      handleStatusChange(e.target.value as RequestStatus)
+                    }
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {updatingStatus && (
+                    <span className="loading loading-spinner loading-xs" />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -332,9 +485,71 @@ export default function MaintenanceRequestPage() {
           {/* Assignee */}
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body gap-2">
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50">
-                Assigned To
-              </h3>
+              {user?.role === "manager" ? (
+                <div className="dropdown">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 cursor-pointer group w-fit"
+                    onClick={handleToggleStaffDropdown}
+                    disabled={updatingAssignee}
+                  >
+                    {updatingAssignee ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      <>
+                        <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50 decoration-dotted underline-offset-2 group-hover:underline">
+                          Assigned To
+                        </h3>
+                        <Pencil className="size-3 text-base-content/30 group-hover:text-base-content/60" />
+                      </>
+                    )}
+                  </button>
+
+                  {staffOpen && (
+                    <ul className="dropdown-content menu rounded-box bg-base-100 shadow-md z-10 w-56 p-1 mt-1">
+                      {request.assignedTo && (
+                        <li>
+                          <button
+                            type="button"
+                            className="text-sm text-error"
+                            onClick={() => handleAssign(null)}
+                          >
+                            Unassign
+                          </button>
+                        </li>
+                      )}
+                      {staffList.length === 0 && (
+                        <li>
+                          <span className="text-sm text-base-content/40 italic px-3 py-2">
+                            No staff found
+                          </span>
+                        </li>
+                      )}
+                      {staffList.map((s) => (
+                        <li key={s.id}>
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 text-sm"
+                            onClick={() => handleAssign(s.id)}
+                          >
+                            <div className="avatar avatar-placeholder">
+                              <div className="bg-neutral text-neutral-content w-6 rounded-full text-xs">
+                                <span>{getInitials(s.fullName)}</span>
+                              </div>
+                            </div>
+                            {s.fullName}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <h3 className="font-semibold text-sm uppercase tracking-wide text-base-content/50">
+                  Assigned To
+                </h3>
+              )}
+
               {request.assigneeName ? (
                 <div className="flex items-center gap-2">
                   <div className="avatar avatar-placeholder">
@@ -378,6 +593,94 @@ export default function MaintenanceRequestPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card bg-base-100 w-full max-w-md shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title text-lg">Edit Request</h2>
+              <form
+                onSubmit={handleEditSubmit}
+                className="flex flex-col gap-3 mt-2"
+              >
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend">Title *</legend>
+                  <input
+                    type="text"
+                    required
+                    className="input input-bordered w-full"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    disabled={isSubmittingEdit}
+                  />
+                </fieldset>
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend">Description</legend>
+                  <textarea
+                    className="textarea textarea-bordered w-full resize-none"
+                    rows={3}
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    disabled={isSubmittingEdit}
+                  />
+                </fieldset>
+                <div className="grid grid-cols-2 gap-3">
+                  <fieldset className="fieldset">
+                    <legend className="fieldset-legend">Category</legend>
+                    <select
+                      className="select select-bordered w-full"
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      disabled={isSubmittingEdit}
+                    >
+                      <option value="general">General</option>
+                      <option value="plumbing">Plumbing</option>
+                      <option value="electrical">Electrical</option>
+                      <option value="hvac">HVAC</option>
+                    </select>
+                  </fieldset>
+                  <fieldset className="fieldset">
+                    <legend className="fieldset-legend">Priority</legend>
+                    <select
+                      className="select select-bordered w-full"
+                      value={editPriority}
+                      onChange={(e) => setEditPriority(e.target.value)}
+                      disabled={isSubmittingEdit}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="emergency">Emergency</option>
+                    </select>
+                  </fieldset>
+                </div>
+                <div className="card-actions justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setIsEditing(false)}
+                    disabled={isSubmittingEdit}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-neutral btn-sm"
+                    disabled={isSubmittingEdit || !editTitle.trim()}
+                  >
+                    {isSubmittingEdit ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

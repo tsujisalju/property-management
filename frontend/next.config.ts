@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const s3Bucket = process.env.AWS_S3_BUCKET ?? "property-management-s3";
+const s3Region = process.env.AWS_REGION ?? "ap-southeast-1";
+
 const nextConfig: NextConfig = {
   // Proxy /api/* calls to the backend during development so the browser
   // never needs to know the backend URL — only the Next.js server does.
@@ -7,7 +10,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "property-management-s3.s3.ap-southeast-1.amazonaws.com",
+        hostname: `${s3Bucket}.s3.${s3Region}.amazonaws.com`,
         port: "",
         pathname: "/**",
       },

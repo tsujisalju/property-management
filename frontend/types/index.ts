@@ -57,6 +57,8 @@ export interface UnitResponse {
 export interface LeaseResponse {
   id: string;
   unitId: string;
+  unitNumber: string;
+  propertyName: string;
   tenantId: string;
   tenantName: string;
   startDate: string;
