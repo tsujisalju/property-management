@@ -19,7 +19,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app/src   # enables live reload in dev via dotnet watch
+      - ./backend:/app/src # enables live reload in dev via dotnet watch
     networks:
       - property-net
 
@@ -47,14 +47,14 @@ services:
     image: postgres:15-alpine
     container_name: property-db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: propertydb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: localpass
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/migrations:/docker-entrypoint-initdb.d   # auto-runs on first start
+      - ./db/migrations:/docker-entrypoint-initdb.d # auto-runs on first start
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

@@ -1,8 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
+
+function RegisteredBanner() {
+  const searchParams = useSearchParams();
+  if (!searchParams.get("registered")) return null;
+  return (
+    <div className="alert alert-success text-sm py-2">
+      <span>Account created! Sign in to continue.</span>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -39,6 +50,10 @@ export default function LoginPage() {
               Sign in to your account
             </p>
           </div>
+
+          <Suspense>
+            <RegisteredBanner />
+          </Suspense>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <fieldset className="fieldset">
@@ -84,6 +99,13 @@ export default function LoginPage() {
                 "Sign in"
               )}
             </button>
+
+            <p className="text-sm text-center text-base-content/60">
+              Don&apos;t have an account?{" "}
+              <Link href="/register" className="link link-neutral">
+                Register
+              </Link>
+            </p>
           </form>
         </div>
       </div>
