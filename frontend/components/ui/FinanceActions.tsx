@@ -1,19 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import CreateInvoiceModal from "@/components/ui/CreateInvoiceModal";
 import SetBudgetModal from "@/components/ui/SetBudgetModal";
 
-export default function FinanceActions() {
-  const router = useRouter();
+export default function FinanceActions({ onDone }: { onDone: () => void }) {
   const [showInvoice, setShowInvoice] = useState(false);
   const [showBudget, setShowBudget] = useState(false);
 
   function handleDone() {
     setShowInvoice(false);
     setShowBudget(false);
-    router.refresh();
+    onDone();
   }
 
   return (
