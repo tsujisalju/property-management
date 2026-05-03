@@ -45,6 +45,15 @@ const sections = [
     color: "bg-amber-50 border-amber-200",
     badge: "bg-amber-100 text-amber-700",
   },
+  {
+    title: "Users",
+    description:
+      "View information of user accounts and assign managerial roles.",
+    href: "/dashboard/users",
+    role: "Admin",
+    color: "bg-rose-50 border-rose-200",
+    badge: "bg-rose-100 text-rose-700",
+  },
 ];
 
 export default function DashboardPage() {

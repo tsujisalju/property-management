@@ -30,6 +30,10 @@ export interface UpdateUserRequest {
   phone?: string;
 }
 
+export interface UpdateUserRoleRequest {
+  role: UserRole;
+}
+
 export interface PropertyResponse {
   id: string;
   name: string;
