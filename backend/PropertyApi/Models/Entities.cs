@@ -109,8 +109,9 @@ public class Invoice
     public decimal Amount { get; set; }
     public DateOnly DueDate { get; set; }
     public DateOnly? PaidDate { get; set; }
-    public string Status { get; set; } = "pending"; // pending | paid | overdue | cancelled
-    [Column("s3_pdf_key")] public string? S3PdfKey { get; set; }
+    public string Status { get; set; } = "pending"; // pending | under_review | paid | overdue | cancelled
+    [Column("s3_pdf_key")]     public string? S3PdfKey { get; set; }
+    [Column("s3_receipt_key")] public string? S3ReceiptKey { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey(nameof(LeaseId))] public Lease Lease { get; set; } = null!;

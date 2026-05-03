@@ -58,7 +58,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <Link
         href="/dashboard"
         className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content w-fit"
@@ -88,8 +88,12 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
-                <p className="font-semibold text-lg leading-tight">{user.fullName}</p>
-                <span className="badge badge-sm capitalize mt-1">{user.role}</span>
+                <p className="font-semibold text-lg leading-tight">
+                  {user.fullName}
+                </p>
+                <span className="badge badge-sm capitalize mt-1">
+                  {user.role}
+                </span>
               </div>
             </div>
             <div className="space-y-2 text-sm">

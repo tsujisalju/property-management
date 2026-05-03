@@ -83,9 +83,10 @@ CREATE TABLE invoices (
     amount     DECIMAL(10,2) NOT NULL,
     due_date   DATE NOT NULL,
     paid_date  DATE,
-    status     TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
-    s3_pdf_key VARCHAR(512),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    status     TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'paid', 'overdue', 'cancelled')),
+    s3_pdf_key     VARCHAR(512),
+    s3_receipt_key VARCHAR(512),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE budgets (

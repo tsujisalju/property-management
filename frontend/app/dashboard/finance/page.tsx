@@ -79,7 +79,7 @@ export default function FinanceDashboard() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto space-y-6">
+    <main className="max-w-6xl mx-auto space-y-6">
       {/* ── Page title ────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div>

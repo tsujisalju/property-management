@@ -6,7 +6,7 @@ export type LeaseStatus = "active" | "expired" | "terminated";
 export type UnitStatus = "vacant" | "occupied" | "maintenance";
 export type RequestStatus = "open" | "in_progress" | "resolved" | "closed";
 export type RequestPriority = "low" | "medium" | "high" | "emergency";
-export type InvoiceStatus = "pending" | "paid" | "overdue" | "cancelled";
+export type InvoiceStatus = "pending" | "under_review" | "paid" | "overdue" | "cancelled";
 export type InvoiceType = "rent" | "maintenance" | "deposit" | "penalty";
 
 export interface HealthResponse {
@@ -111,6 +111,7 @@ export interface InvoiceResponse {
   paidDate: string | null;
   status: InvoiceStatus;
   s3PdfKey: string | null;
+  s3ReceiptKey: string | null;
   createdAt: string;
 }
 
