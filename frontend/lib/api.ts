@@ -63,6 +63,11 @@ export const usersApi = {
     ).toString();
     return request<UserResponse[]>(`/users${qs ? `?${qs}` : ""}`);
   },
+  updateRole: (id: string, role: string) =>
+    request<UserResponse>(`/users/${id}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    }),
 };
 
 // ── Health

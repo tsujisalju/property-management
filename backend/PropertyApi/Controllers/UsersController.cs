@@ -64,4 +64,28 @@ public class UsersController(ICurrentUserService currentUser, AppDbContext db) :
             .ToListAsync();
         return Ok(users);
     }
+
+    // PATCH /api/users/{id}/role — admin assigns a role to any user
+    // TODO: add [Authorize(Roles = "admin")] once role-based auth is configured
+    [HttpPatch("{id:guid}/role")]
+    public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateUserRoleRequest dto)
+    {
+        var validRoles = new HashSet<string> { "manager", "tenant", "maintenance_staff", "admin" };
+        if (!validRoles.Contains(dto.Role))
+            return BadRequest($"Invalid role '{dto.Role}'. Must be one of: {string.Join(", ", validRoles)}.");
+
+        var target = await db.Users.FindAsync(id);
+        if (target is null) return NotFound();
+
+        if (target.Role == "admin" && dto.Role != "admin")
+        {
+            var adminCount = await db.Users.CountAsync(u => u.Role == "admin");
+            if (adminCount <= 1)
+                return BadRequest("Cannot change the role of the last admin.");
+        }
+
+        target.Role = dto.Role;
+        await db.SaveChangesAsync();
+        return Ok(new UserResponse(target.Id, target.FullName, target.Email, target.Phone, target.Role, target.CreatedAt));
+    }
 }

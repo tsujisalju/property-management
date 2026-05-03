@@ -12,7 +12,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-8">
+    <main className="w-full max-w-3xl mx-auto min-h-screen flex flex-col items-center justify-center gap-8 p-8">
       <div className="text-center">
         <h1 className="text-3xl font-semibold text-gray-900">
           Property Management Platform
@@ -23,43 +23,54 @@ export default async function HomePage() {
       </div>
 
       {/* Backend health card */}
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">
-          Backend status
-        </p>
-
-        {error ? (
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            <span className="text-sm text-red-600">
-              Cannot reach backend — {error}
-            </span>
-          </div>
-        ) : health ? (
-          <div className="space-y-2 text-sm">
+      <div className="card w-full max-w-sm bg-base-100 shadow-sm">
+        <div className="card-body">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">
+            Backend status
+          </p>
+          {error ? (
             <div className="flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${health.status === "ok" ? "bg-green-500" : "bg-yellow-400"}`}
-              />
-              <span className="font-medium capitalize">{health.status}</span>
-              <span className="text-gray-400">— {health.environment}</span>
+              <span className="status status-error" />
+              <span className="text-sm text-red-600">
+                Cannot reach backend — {error}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${health.database === "connected" ? "bg-green-500" : "bg-red-500"}`}
-              />
-              <span className="text-gray-600">Database {health.database}</span>
+          ) : health ? (
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`status ${health.status === "ok" ? "status-success" : "status-warning"}`}
+                />
+                <span className="font-medium capitalize">{health.status}</span>
+                <span className="text-gray-400">— {health.environment}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`status ${health.database === "connected" ? "status-success" : "status-error"}`}
+                />
+                <span className="text-gray-600">
+                  Database {health.database}
+                </span>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
-      <Link
-        href="/dashboard"
-        className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
-      >
+      <Link href="/dashboard" className="btn btn-primary">
         Go to dashboard
       </Link>
+
+      <div className="text-center space-y-2">
+        <p className="text-sm font-semibold">
+          Designing and Developing Applications on the Cloud (022026-LWL)
+        </p>
+        <small>
+          Ahmed Saleh Mohsen Mabkhot Al-Shadadi • Hayyan Mohamed Abdulla •
+          Muhammad Qayyum Bin Mahamad Yazid • Teshwindev Singh Bhatt A/L Baldev
+          Singh
+        </small>
+      </div>
     </main>
   );
 }
