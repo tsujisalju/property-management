@@ -1,8 +1,13 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { invoicesApi, leasesApi, maintenanceApi } from "@/lib/api";
+import {
+  invoicesApi,
+  leasesApi,
+  maintenanceApi,
+  uploadFileToS3,
+} from "@/lib/api";
 import type {
   InvoiceResponse,
   LeaseResponse,
@@ -14,13 +19,31 @@ import NewRequestForm from "@/components/tenant/new-request-form";
 
 const STATUS_BADGE: Record<string, string> = {
   pending: "badge-warning",
+  under_review: "badge-info",
   paid: "badge-success",
   overdue: "badge-error",
   cancelled: "badge-ghost",
 };
 
-function InvoiceRow({ invoice }: { invoice: InvoiceResponse }) {
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  under_review: "Under Review",
+  paid: "Paid",
+  overdue: "Overdue",
+  cancelled: "Cancelled",
+};
+
+function InvoiceRow({
+  invoice,
+  onReceiptUploaded,
+}: {
+  invoice: InvoiceResponse;
+  onReceiptUploaded: (updated: InvoiceResponse) => void;
+}) {
   const [downloading, setDownloading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleDownload() {
     setDownloading(true);
@@ -32,41 +55,105 @@ function InvoiceRow({ invoice }: { invoice: InvoiceResponse }) {
     }
   }
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const contentType = file.type || "image/jpeg";
+      const { uploadUrl, key } = await invoicesApi.getReceiptUploadUrl(
+        invoice.id,
+        contentType,
+      );
+      await uploadFileToS3(uploadUrl, file, contentType);
+      const updated = await invoicesApi.saveReceiptKey(invoice.id, key);
+      onReceiptUploaded(updated);
+    } catch {
+      setUploadError("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  const canUpload =
+    invoice.status === "pending" ||
+    invoice.status === "overdue" ||
+    invoice.status === "under_review";
+
   return (
-    <tr>
-      <td>
-        <span className="badge badge-sm capitalize">{invoice.type}</span>
-      </td>
-      <td>
-        MYR{" "}
-        {invoice.amount.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
-      </td>
-      <td>{invoice.dueDate}</td>
-      <td>
-        <span
-          className={`badge badge-sm capitalize ${STATUS_BADGE[invoice.status] ?? "badge-ghost"}`}
-        >
-          {invoice.status}
-        </span>
-      </td>
-      <td>
-        {invoice.s3PdfKey ? (
-          <button
-            className="btn btn-xs btn-ghost"
-            onClick={handleDownload}
-            disabled={downloading}
-          >
-            {downloading ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              "Download"
-            )}
-          </button>
-        ) : (
-          <span className="text-base-content/30">—</span>
-        )}
-      </td>
-    </tr>
+    <>
+      <tr>
+        <td>
+          <span className="badge badge-sm capitalize">{invoice.type}</span>
+        </td>
+        <td>
+          MYR{" "}
+          {invoice.amount.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
+        </td>
+        <td>{invoice.dueDate}</td>
+        <td>
+          <div className="flex flex-col gap-1">
+            <span
+              className={`badge badge-sm ${STATUS_BADGE[invoice.status] ?? "badge-ghost"}`}
+            >
+              {STATUS_LABEL[invoice.status] ?? invoice.status}
+            </span>
+          </div>
+        </td>
+        <td>
+          {invoice.s3PdfKey ? (
+            <button
+              className="btn btn-xs btn-ghost"
+              onClick={handleDownload}
+              disabled={downloading}
+            >
+              {downloading ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                "Download"
+              )}
+            </button>
+          ) : (
+            <span className="text-base-content/30">—</span>
+          )}
+        </td>
+        <td>
+          {canUpload && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <button
+                className="btn btn-xs btn-outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : invoice.s3ReceiptKey ? (
+                  "Replace"
+                ) : (
+                  "Upload Receipt"
+                )}
+              </button>
+            </>
+          )}
+        </td>
+      </tr>
+      {uploadError && (
+        <tr>
+          <td colSpan={6} className="py-1">
+            <span className="text-xs text-error">{uploadError}</span>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -186,11 +273,20 @@ export default function TenantPortalPage() {
                     <th>Due Date</th>
                     <th>Status</th>
                     <th>PDF</th>
+                    <th>Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoices.map((inv) => (
-                    <InvoiceRow key={inv.id} invoice={inv} />
+                    <InvoiceRow
+                      key={inv.id}
+                      invoice={inv}
+                      onReceiptUploaded={(updated) =>
+                        setInvoices((prev) =>
+                          prev.map((i) => (i.id === updated.id ? updated : i)),
+                        )
+                      }
+                    />
                   ))}
                 </tbody>
               </table>

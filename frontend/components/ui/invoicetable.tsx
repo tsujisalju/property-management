@@ -4,7 +4,7 @@
 // Client Component — needs interactivity (PDF download onClick).
 
 import React, { useState, useEffect } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2 } from "lucide-react";
 import { invoicesApi } from "@/lib/api";
 import type { InvoiceResponse } from "@/types";
 import { CheckCircle } from "lucide-react";
@@ -20,17 +20,26 @@ interface Props {
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
+const STATUS_CLASS: Record<string, string> = {
+  pending: "badge-warning",
+  under_review: "badge-info",
+  paid: "badge-success",
+  overdue: "badge-error",
+  cancelled: "badge-ghost",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  under_review: "Under Review",
+  paid: "Paid",
+  overdue: "Overdue",
+  cancelled: "Cancelled",
+};
+
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "badge-warning",
-    paid: "badge-success",
-    overdue: "badge-error",
-    cancelled: "badge-ghost",
-  };
-  const cls = map[status] ?? "badge-neutral";
   return (
-    <span className={`badge badge-sm font-medium capitalize ${cls}`}>
-      {status}
+    <span className={`badge badge-sm font-medium ${STATUS_CLASS[status] ?? "badge-neutral"}`}>
+      {STATUS_LABEL[status] ?? status}
     </span>
   );
 }
@@ -83,6 +92,41 @@ function PdfDownloadButton({ invoiceId }: { invoiceId: string }) {
         <Download size={14} />
       )}
       PDF
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Receipt download button (per-row loading state)
+// ─────────────────────────────────────────────────────────────────────────────
+function ReceiptButton({ invoiceId }: { invoiceId: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const { url } = await invoicesApi.getReceiptUrl(invoiceId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      alert("Could not retrieve receipt. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="btn btn-ghost btn-xs gap-1"
+      aria-label="View receipt"
+    >
+      {loading ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <FileText size={14} />
+      )}
+      Receipt
     </button>
   );
 }
@@ -168,6 +212,7 @@ export default function InvoiceTable({
             <th>Status</th>
             <th>Paid Date</th>
             <th className="text-center">PDF</th>
+            <th className="text-center">Receipt</th>
             {onInvoiceUpdate && <th></th>}
           </tr>
         </thead>
@@ -217,6 +262,15 @@ export default function InvoiceTable({
               <td className="text-center">
                 {invoice.s3PdfKey ? (
                   <PdfDownloadButton invoiceId={invoice.id} />
+                ) : (
+                  <span className="text-base-content/30 text-xs">—</span>
+                )}
+              </td>
+
+              {/* Receipt — shown when tenant has uploaded one */}
+              <td className="text-center">
+                {invoice.s3ReceiptKey ? (
+                  <ReceiptButton invoiceId={invoice.id} />
                 ) : (
                   <span className="text-base-content/30 text-xs">—</span>
                 )}
