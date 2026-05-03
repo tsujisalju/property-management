@@ -68,7 +68,7 @@ export default async function HomePage() {
         <small>
           Ahmed Saleh Mohsen Mabkhot Al-Shadadi (TP074025) • Hayyan Mohamed
           Abdulla (TP074745) • Muhammad Qayyum Bin Mahamad Yazid (TP075129) •
-          Teshwindev Singh Bhatt A/L Baldev (TP068387) Singh
+          Teshwindev Singh Bhatt A/L Baldev Singh (TP068387)
         </small>
       </div>
     </main>
