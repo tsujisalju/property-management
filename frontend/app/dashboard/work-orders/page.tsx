@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { maintenanceApi, usersApi } from "@/lib/api";
 import type { MaintenanceRequestResponse, RequestStatus } from "@/types";
 import { WorkOrderCard } from "@/components/ui/WorkOrderCard";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 type FilterTab = "all" | RequestStatus;
 

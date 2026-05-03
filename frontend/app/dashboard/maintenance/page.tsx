@@ -5,7 +5,7 @@ import { maintenanceApi } from "@/lib/api";
 import type { MaintenanceRequestResponse, RequestStatus } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PriorityBadge } from "@/components/ui/priority-badge";
-import { ArrowLeft, Building, DoorClosed } from "lucide-react";
+import { Building, DoorClosed } from "lucide-react";
 import Link from "next/link";
 import { getInitials } from "@/lib/ui";
 
@@ -94,14 +94,6 @@ export default function MaintenancePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back link */}
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        Dashboard
-      </Link>
       <div>
         <h1 className="font-semibold text-2xl">Maintenance Requests</h1>
         <p className="text-base-content/60 text-sm mt-1">

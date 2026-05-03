@@ -5,8 +5,6 @@ import { usersApi } from "@/lib/api";
 import { getInitials } from "@/lib/ui";
 import type { UserResponse, UserRole } from "@/types";
 import ChangeRoleModal from "@/components/ui/ChangeRoleModal";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 const ROLE_BADGE: Record<UserRole, string> = {
   admin: "badge badge-sm badge-error",
@@ -106,14 +104,6 @@ export default function UsersPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        Dashboard
-      </Link>
-
       <div>
         <h1 className="font-semibold text-2xl">Users</h1>
         <p className="text-base-content/60 text-sm mt-1">

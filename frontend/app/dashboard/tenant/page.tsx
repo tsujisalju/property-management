@@ -11,8 +11,6 @@ import type {
 import LeaseCard from "@/components/tenant/lease-card";
 import RequestList from "@/components/tenant/request-list";
 import NewRequestForm from "@/components/tenant/new-request-form";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 const STATUS_BADGE: Record<string, string> = {
   pending: "badge-warning",

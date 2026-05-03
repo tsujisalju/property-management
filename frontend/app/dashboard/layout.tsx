@@ -5,6 +5,7 @@ import Account from "@/components/ui/account";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import Link from "next/link";
 import { ReactNode } from "react";
+import { Home } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -14,7 +15,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Header */}
       <div className="max-w-5xl mx-auto flex justify-between items-center mb-6">
         <Link href="/dashboard">
-          <h1 className="font-bold text-lg">Property Management Platform</h1>
+          <div className="flex gap-2 items-center">
+            <Home className="size-5" />
+            <h1 className="font-bold text-lg">Property Management Platform</h1>
+          </div>
         </Link>
         <Account />
       </div>

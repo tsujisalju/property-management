@@ -4,13 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { propertiesApi, leasesApi, maintenanceApi, usersApi } from "@/lib/api";
-import {
-  Building,
-  DoorClosed,
-  Toolbox,
-  ClipboardList,
-  Users,
-} from "lucide-react";
+import { Building, DoorClosed, Toolbox, Users } from "lucide-react";
 
 // ── Manager summary ──────────────────────────────────────────────────────────
 
@@ -109,7 +103,7 @@ function AdminSummary() {
         <h2 className="font-medium text-base-content/50 text-sm uppercase tracking-wide">
           Summary
         </h2>
-        <div className="stats shadow">
+        <div className="stats shadow w-full">
           <div className="stat bg-base-100">
             <div className="stat-figure text-secondary">
               <Users />

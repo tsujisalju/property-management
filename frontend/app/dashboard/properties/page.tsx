@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { propertiesApi } from "@/lib/api";
 import type { PropertyResponse } from "@/types";
-import { ArrowLeft, Building, MapPin, Plus } from "lucide-react";
+import { Building, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -73,13 +73,6 @@ export default function PropertiesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-1.5 mb-2 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        Dashboard
-      </Link>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-semibold text-2xl">Properties</h1>
