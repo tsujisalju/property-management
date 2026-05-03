@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { propertiesApi, leasesApi, usersApi } from "@/lib/api";
-import type { LeaseResponse, PropertyDetailResponse, UnitResponse, UserResponse } from "@/types";
+import type {
+  LeaseResponse,
+  PropertyDetailResponse,
+  UnitResponse,
+  UserResponse,
+} from "@/types";
 import {
   ArrowLeft,
   BedDouble,
@@ -330,7 +335,9 @@ function LeaseDetailModal({
         <div className="card-body gap-3">
           <div className="flex items-start justify-between">
             <h2 className="card-title text-lg">Lease — Unit {unitNumber}</h2>
-            <span className="badge badge-success capitalize">{lease.status}</span>
+            <span className="badge badge-success capitalize">
+              {lease.status}
+            </span>
           </div>
 
           <div className="text-sm space-y-2 mt-1">
@@ -341,7 +348,10 @@ function LeaseDetailModal({
             <div className="flex justify-between">
               <span className="text-base-content/50">Monthly Rent</span>
               <span className="font-medium">
-                MYR {lease.monthlyRent.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
+                MYR{" "}
+                {lease.monthlyRent.toLocaleString("en-MY", {
+                  minimumFractionDigits: 2,
+                })}
               </span>
             </div>
             <div className="flex justify-between">
@@ -366,7 +376,11 @@ function LeaseDetailModal({
                 "Terminate Lease"
               )}
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={terminating}>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={onClose}
+              disabled={terminating}
+            >
               Close
             </button>
           </div>
@@ -415,7 +429,8 @@ export default function PropertyDetailPage() {
     setViewUnit(unit);
     try {
       const leases = await leasesApi.list(unit.id);
-      const active = leases.find((l) => l.status === "active") ?? leases[0] ?? null;
+      const active =
+        leases.find((l) => l.status === "active") ?? leases[0] ?? null;
       setViewLease(active);
     } catch {
       setViewLease(null);
@@ -428,7 +443,9 @@ export default function PropertyDetailPage() {
     try {
       await leasesApi.terminate(viewLease.id);
       setUnits((prev) =>
-        prev.map((u) => u.id === viewUnit.id ? { ...u, status: "vacant" } : u)
+        prev.map((u) =>
+          u.id === viewUnit.id ? { ...u, status: "vacant" } : u,
+        ),
       );
       setViewLease(null);
       setViewUnit(null);
@@ -470,7 +487,7 @@ export default function PropertyDetailPage() {
   const vacant = units.filter((u) => u.status === "vacant").length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <Link
         href="/dashboard/properties"
         className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content w-fit"
@@ -586,7 +603,10 @@ export default function PropertyDetailPage() {
           unitNumber={viewUnit.unitNumber}
           terminating={terminating}
           onTerminate={handleTerminate}
-          onClose={() => { setViewLease(null); setViewUnit(null); }}
+          onClose={() => {
+            setViewLease(null);
+            setViewUnit(null);
+          }}
         />
       )}
 
@@ -597,7 +617,9 @@ export default function PropertyDetailPage() {
           tenants={tenants}
           onCreated={(unitId) => {
             setUnits((prev) =>
-              prev.map((u) => u.id === unitId ? { ...u, status: "occupied" } : u)
+              prev.map((u) =>
+                u.id === unitId ? { ...u, status: "occupied" } : u,
+              ),
             );
             setLeaseUnit(null);
           }}

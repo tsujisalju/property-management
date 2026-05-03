@@ -222,9 +222,23 @@ export const invoicesApi = {
             method: "PATCH",
         }),
 
-   
     getPdfUrl: (id: string) =>
         request<{ url: string }>(`/invoices/${id}/pdf-url`),
+
+    getReceiptUploadUrl: (id: string, contentType = "image/jpeg") =>
+        request<PresignedUrlResponse>(
+            `/invoices/${id}/receipt-upload-url?contentType=${encodeURIComponent(contentType)}`,
+            { method: "POST" }
+        ),
+
+    saveReceiptKey: (id: string, key: string) =>
+        request<InvoiceResponse>(`/invoices/${id}/receipt-key`, {
+            method: "PATCH",
+            body: JSON.stringify({ key }),
+        }),
+
+    getReceiptUrl: (id: string) =>
+        request<{ url: string }>(`/invoices/${id}/receipt-url`),
 };
 
 // ── Budgets 

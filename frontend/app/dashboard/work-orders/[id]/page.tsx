@@ -97,7 +97,7 @@ export default function WorkOrderDetailPage() {
 
   if (error || !request) {
     return (
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-6xl mx-auto p-8">
         <div className="alert alert-error">
           {error ?? "Work order not found."}
         </div>
@@ -106,7 +106,7 @@ export default function WorkOrderDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Back link */}
       <Link
         href="/dashboard/work-orders"

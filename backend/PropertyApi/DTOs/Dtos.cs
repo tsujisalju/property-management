@@ -138,7 +138,7 @@ public record PresignedUrlResponse(string UploadUrl, string Key);
 
 // ── Invoices ───────────────────────────────────────────────────────────────
 
-public record InvoiceResponse(Guid Id, Guid LeaseId, string Type, decimal Amount, DateOnly DueDate, DateOnly? PaidDate, string Status, string? S3PdfKey, DateTime CreatedAt);
+public record InvoiceResponse(Guid Id, Guid LeaseId, string Type, decimal Amount, DateOnly DueDate, DateOnly? PaidDate, string Status, string? S3PdfKey, string? S3ReceiptKey, DateTime CreatedAt);
 
 public record CreateInvoiceRequest(
     Guid LeaseId,
@@ -147,6 +147,8 @@ public record CreateInvoiceRequest(
     DateOnly DueDate,
     string? Category   // required when Type == "maintenance"; used to auto-record budget spend
 );
+
+public record SaveReceiptKeyRequest(string Key);
 
 // ── Budgets ────────────────────────────────────────────────────────────────
 

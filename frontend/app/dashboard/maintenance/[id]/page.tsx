@@ -237,7 +237,7 @@ export default function MaintenanceRequestPage() {
   if (error || !request) {
     return (
       <main className="min-h-screen bg-base-200 p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="alert alert-error">
             {error ?? "Request not found."}
           </div>
@@ -247,7 +247,7 @@ export default function MaintenanceRequestPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Back link */}
       {user?.role == "manager" ? (
         <Link
