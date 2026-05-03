@@ -14,11 +14,11 @@ public class PropertiesController(AppDbContext db, ICurrentUserService currentUs
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var manager = await currentUser.GetCurrentUserAsync();
+        var caller = await currentUser.GetCurrentUserAsync();
 
         var query = db.Properties.AsQueryable();
-        if (manager is not null)
-            query = query.Where(p => p.ManagerId == manager.Id);
+        if (caller is not null && caller.Role == "manager")
+            query = query.Where(p => p.ManagerId == caller.Id);
 
         var properties = await query.OrderBy(p => p.Name).Select(p => ToResponse(p)).ToListAsync();
         return Ok(properties);
