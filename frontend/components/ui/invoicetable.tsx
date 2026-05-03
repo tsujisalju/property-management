@@ -3,7 +3,7 @@
 // components/ui/InvoiceTable.tsx
 // Client Component — needs interactivity (PDF download onClick).
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { invoicesApi } from "@/lib/api";
 import type { InvoiceResponse } from "@/types";
@@ -136,6 +136,10 @@ export default function InvoiceTable({
   onInvoiceUpdate,
 }: Props) {
   const [invoices, setInvoices] = useState<InvoiceResponse[]>(initialInvoices);
+
+  useEffect(() => {
+    setInvoices(initialInvoices);
+  }, [initialInvoices]);
 
   function handleInvoiceUpdate(updated: InvoiceResponse) {
     setInvoices((prev) =>

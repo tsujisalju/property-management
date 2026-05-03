@@ -19,7 +19,7 @@ import type {
 // browser and avoiding mixed-content errors on the Vercel HTTPS deployment.
 const BASE =
   typeof window === "undefined"
-    ? (process.env.BACKEND_URL ?? "http://localhost:8080")
+    ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080")
     : "";
 
 class ApiClientError extends Error {
