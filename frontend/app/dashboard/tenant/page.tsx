@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { invoicesApi, leasesApi, maintenanceApi } from "@/lib/api";
-import type { InvoiceResponse, LeaseResponse, MaintenanceRequestResponse } from "@/types";
+import type {
+  InvoiceResponse,
+  LeaseResponse,
+  MaintenanceRequestResponse,
+} from "@/types";
 import LeaseCard from "@/components/tenant/lease-card";
 import RequestList from "@/components/tenant/request-list";
 import NewRequestForm from "@/components/tenant/new-request-form";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 const STATUS_BADGE: Record<string, string> = {
   pending: "badge-warning",
@@ -36,11 +38,14 @@ function InvoiceRow({ invoice }: { invoice: InvoiceResponse }) {
         <span className="badge badge-sm capitalize">{invoice.type}</span>
       </td>
       <td>
-        MYR {invoice.amount.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
+        MYR{" "}
+        {invoice.amount.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
       </td>
       <td>{invoice.dueDate}</td>
       <td>
-        <span className={`badge badge-sm capitalize ${STATUS_BADGE[invoice.status] ?? "badge-ghost"}`}>
+        <span
+          className={`badge badge-sm capitalize ${STATUS_BADGE[invoice.status] ?? "badge-ghost"}`}
+        >
           {invoice.status}
         </span>
       </td>
@@ -51,7 +56,11 @@ function InvoiceRow({ invoice }: { invoice: InvoiceResponse }) {
             onClick={handleDownload}
             disabled={downloading}
           >
-            {downloading ? <span className="loading loading-spinner loading-xs" /> : "Download"}
+            {downloading ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              "Download"
+            )}
           </button>
         ) : (
           <span className="text-base-content/30">—</span>
@@ -114,15 +123,6 @@ export default function TenantPortalPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back to dashboard */}
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        Dashboard
-      </Link>
-
       {/* Page header */}
       <div>
         <h1 className="font-semibold text-2xl">Tenant Portal</h1>

@@ -5,8 +5,7 @@ import InvoiceTableManager from "@/components/ui/InvoiceTableManager";
 import FinanceActions from "@/components/ui/FinanceActions";
 import { invoicesApi, budgetsApi } from "@/lib/api";
 import type { BudgetResponse, InvoiceResponse } from "@/types";
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 
 const CATEGORIES = ["plumbing", "electrical", "hvac", "general"] as const;
 type Category = string; // matches BudgetResponse.category: string
@@ -70,13 +69,6 @@ export default async function FinanceDashboard() {
 
   return (
     <main className="max-w-4xl mx-auto space-y-6">
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content w-fit"
-      >
-        <ArrowLeft className="size-4" />
-        Dashboard
-      </Link>
       {/* ── Page title ────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div>

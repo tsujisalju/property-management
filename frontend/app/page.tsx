@@ -66,9 +66,9 @@ export default async function HomePage() {
           Designing and Developing Applications on the Cloud (022026-LWL)
         </p>
         <small>
-          Ahmed Saleh Mohsen Mabkhot Al-Shadadi • Hayyan Mohamed Abdulla •
-          Muhammad Qayyum Bin Mahamad Yazid • Teshwindev Singh Bhatt A/L Baldev
-          Singh
+          Ahmed Saleh Mohsen Mabkhot Al-Shadadi (TP074025) • Hayyan Mohamed
+          Abdulla (TP074745) • Muhammad Qayyum Bin Mahamad Yazid (TP075129) •
+          Teshwindev Singh Bhatt A/L Baldev (TP068387) Singh
         </small>
       </div>
     </main>
