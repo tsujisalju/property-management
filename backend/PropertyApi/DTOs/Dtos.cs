@@ -10,6 +10,8 @@ public record UserResponse(Guid Id, string FullName, string Email, string? Phone
 
 public record UpdateUserRequest(string? FullName, string? Phone);
 
+public record UpdateUserRoleRequest(string Role);
+
 // ── Properties ─────────────────────────────────────────────────────────────
 
 public record PropertyResponse(Guid Id, string Name, string Address, string City, int TotalUnits, string? S3PhotoKey, DateTime CreatedAt);
