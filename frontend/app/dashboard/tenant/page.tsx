@@ -209,7 +209,7 @@ export default function TenantPortalPage() {
   const activeLease = leases.find((l) => l.status === "active");
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Page header */}
       <div>
         <h1 className="font-semibold text-2xl">Tenant Portal</h1>

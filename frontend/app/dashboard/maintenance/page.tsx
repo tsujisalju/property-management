@@ -93,7 +93,7 @@ export default function MaintenancePage() {
       : requests.filter((r) => r.status === activeTab);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div>
         <h1 className="font-semibold text-2xl">Maintenance Requests</h1>
         <p className="text-base-content/60 text-sm mt-1">
