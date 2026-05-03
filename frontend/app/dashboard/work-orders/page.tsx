@@ -39,78 +39,73 @@ export default function WorkOrdersPage() {
 
   function handleStatusChange(id: string, newStatus: string) {
     setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: newStatus as typeof r.status } : r))
+      prev.map((r) =>
+        r.id === id ? { ...r, status: newStatus as typeof r.status } : r,
+      ),
     );
   }
 
   const filtered =
-      activeTab === "all"
-          ? requests
-          : requests.filter((r) => r.status === activeTab);
+    activeTab === "all"
+      ? requests
+      : requests.filter((r) => r.status === activeTab);
 
   return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content w-fit"
-        >
-          <ArrowLeft className="size-4" />
-          Dashboard
-        </Link>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="font-semibold text-2xl">Work Orders</h1>
+        <p className="text-base-content/60 text-sm mt-1">
+          Your assigned maintenance jobs
+        </p>
+      </div>
 
-        <div>
-          <h1 className="font-semibold text-2xl">Work Orders</h1>
-          <p className="text-base-content/60 text-sm mt-1">
-            Your assigned maintenance jobs
-          </p>
-        </div>
-
-        <div className="join">
-          {TABS.map((tab) => (
-              <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`btn btn-sm join-item ${activeTab === tab.value ? "btn-neutral" : "btn-ghost"}`}
-              >
-                {tab.label}
-                {tab.value !== "all" && (
-                    <span className="badge badge-sm ml-1">
+      <div className="join">
+        {TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`btn btn-sm join-item ${activeTab === tab.value ? "btn-neutral" : "btn-ghost"}`}
+          >
+            {tab.label}
+            {tab.value !== "all" && (
+              <span className="badge badge-sm ml-1">
                 {requests.filter((r) => r.status === tab.value).length}
               </span>
-                )}
-              </button>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && (
+        <div className="flex justify-center py-16">
+          <span className="loading loading-spinner loading-md" />
+        </div>
+      )}
+
+      {error && (
+        <div className="alert alert-error">
+          <span>{error}</span>
+        </div>
+      )}
+
+      {!isLoading && !error && filtered.length === 0 && (
+        <div className="text-center py-16 text-base-content/50">
+          No {activeTab === "all" ? "" : activeTab.replace("_", " ")} jobs
+          found.
+        </div>
+      )}
+
+      {!isLoading && !error && (
+        <div className="flex flex-col gap-3">
+          {filtered.map((r) => (
+            <WorkOrderCard
+              key={r.id}
+              request={r}
+              onStatusChange={handleStatusChange}
+            />
           ))}
         </div>
-
-        {isLoading && (
-            <div className="flex justify-center py-16">
-              <span className="loading loading-spinner loading-md" />
-            </div>
-        )}
-
-        {error && (
-            <div className="alert alert-error">
-              <span>{error}</span>
-            </div>
-        )}
-
-        {!isLoading && !error && filtered.length === 0 && (
-            <div className="text-center py-16 text-base-content/50">
-              No {activeTab === "all" ? "" : activeTab.replace("_", " ")} jobs found.
-            </div>
-        )}
-
-        {!isLoading && !error && (
-            <div className="flex flex-col gap-3">
-              {filtered.map((r) => (
-                  <WorkOrderCard
-                      key={r.id}
-                      request={r}
-                      onStatusChange={handleStatusChange}
-                  />
-              ))}
-            </div>
-        )}
-      </div>
+      )}
+    </div>
   );
 }

@@ -1,90 +1,173 @@
-import Link from "next/link";
+"use client";
 
-// Each team member expands their own card into a full feature section.
-const sections = [
-  {
-    title: "Properties",
-    description:
-      "Add new property information and create units for tenants to reside in.",
-    href: "/dashboard/properties",
-    role: "Property manager",
-    color: "bg-fuchsia-50 border-fuchsia-200",
-    badge: "bg-fuchsia-100 text-fuchsia-700",
-  },
-  {
-    title: "Maintenance",
-    description:
-      "Schedule repairs, track work history, respond to tenant requests.",
-    href: "/dashboard/maintenance",
-    role: "Property manager",
-    color: "bg-blue-50 border-blue-200",
-    badge: "bg-blue-100 text-blue-700",
-  },
-  {
-    title: "Tenant portal",
-    description:
-      "Submit issues, view lease details, communicate with management.",
-    href: "/dashboard/tenant",
-    role: "Tenant",
-    color: "bg-purple-50 border-purple-200",
-    badge: "bg-purple-100 text-purple-700",
-  },
-  {
-    title: "Finance",
-    description: "Budget tracking, invoices, payment collection and reporting.",
-    href: "/dashboard/finance",
-    role: "Finance / admin",
-    color: "bg-emerald-50 border-emerald-200",
-    badge: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    title: "Work orders",
-    description: "View assigned jobs, update status, add progress comments.",
-    href: "/dashboard/work-orders",
-    role: "Maintenance staff",
-    color: "bg-amber-50 border-amber-200",
-    badge: "bg-amber-100 text-amber-700",
-  },
-  {
-    title: "Users",
-    description:
-      "View information of user accounts and assign managerial roles.",
-    href: "/dashboard/users",
-    role: "Admin",
-    color: "bg-rose-50 border-rose-200",
-    badge: "bg-rose-100 text-rose-700",
-  },
-];
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { propertiesApi, leasesApi, maintenanceApi, usersApi } from "@/lib/api";
+import {
+  Building,
+  DoorClosed,
+  Toolbox,
+  ClipboardList,
+  Users,
+} from "lucide-react";
+
+// ── Manager summary ──────────────────────────────────────────────────────────
+
+function ManagerSummary() {
+  const [props, setProps] = useState<number | null>(null);
+  const [leases, setLeases] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
+
+  useEffect(() => {
+    propertiesApi
+      .list()
+      .then((ps) => setProps(ps.length))
+      .catch(() => setProps(0));
+    leasesApi
+      .list()
+      .then((ls) => setLeases(ls.filter((l) => l.status === "active").length))
+      .catch(() => setLeases(0));
+    maintenanceApi
+      .list({ status: "open" })
+      .then((rs) => setOpen(rs.length))
+      .catch(() => setOpen(0));
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-1">
+        <h1 className="text-2xl font-semibold">Manager Portal</h1>
+        <p className="text-base-content/60 text-sm">
+          Manage property information and track maintenance requests from
+          tenants.
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="font-medium text-base-content/50 text-sm uppercase tracking-wide">
+          Summary
+        </h2>
+        <div className="stats shadow w-full">
+          <div className="stat bg-base-100">
+            <div className="stat-figure text-secondary">
+              <Building />
+            </div>
+            <div className="stat-title">Total Properties</div>
+            <div className="stat-value">{props ?? "—"}</div>
+          </div>
+          <div className="stat bg-base-100">
+            <div className="stat-figure text-secondary">
+              <DoorClosed />
+            </div>
+            <div className="stat-title">Active Leases</div>
+            <div className="stat-value">{leases ?? "—"}</div>
+          </div>
+          <div className="stat bg-base-100">
+            <div className="stat-figure text-secondary">
+              <Toolbox />
+            </div>
+            <div className="stat-title">Open Requests</div>
+            <div className="stat-value">{open ?? "—"}</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ── Admin summary ────────────────────────────────────────────────────────────
+
+function AdminSummary() {
+  const [total, setTotal] = useState<number | null>(null);
+  const [managers, setManagers] = useState<number | null>(null);
+  const [staff, setStaff] = useState<number | null>(null);
+
+  useEffect(() => {
+    usersApi
+      .list()
+      .then((us) => {
+        setTotal(us.length);
+        setManagers(us.filter((u) => u.role === "manager").length);
+        setStaff(us.filter((u) => u.role === "maintenance_staff").length);
+      })
+      .catch(() => {
+        setTotal(0);
+        setManagers(0);
+        setStaff(0);
+      });
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-1">
+        <h1 className="text-2xl font-semibold">Admin Portal</h1>
+        <p className="text-base-content/60 text-sm">
+          Manage user accounts and system access.
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="font-medium text-base-content/50 text-sm uppercase tracking-wide">
+          Summary
+        </h2>
+        <div className="stats shadow">
+          <div className="stat bg-base-100">
+            <div className="stat-figure text-secondary">
+              <Users />
+            </div>
+            <div className="stat-title">Total Users</div>
+            <div className="stat-value">{total ?? "—"}</div>
+          </div>
+          <div className="stat bg-base-100">
+            <div className="stat-figure text-primary">
+              <Users />
+            </div>
+            <div className="stat-title">Managers</div>
+            <div className="stat-value text-primary">{managers ?? "—"}</div>
+          </div>
+          <div className="stat bg-base-100">
+            <div className="stat-figure text-warning">
+              <Users />
+            </div>
+            <div className="stat-title">Staff</div>
+            <div className="stat-value text-warning">{staff ?? "—"}</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-gray-500">Select a section to get started.</p>
-      </div>
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {sections.map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className={`rounded-xl border p-6 hover:shadow-md transition-shadow ${s.color}`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-medium text-gray-900">{s.title}</p>
-                <p className="mt-1 text-sm text-gray-600">{s.description}</p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${s.badge}`}
-              >
-                {s.role}
-              </span>
-            </div>
-          </Link>
-        ))}
+  useEffect(() => {
+    if (!isLoading) {
+      if (user?.role === "tenant") {
+        router.replace("/dashboard/tenant");
+      }
+      if (user?.role === "maintenance_staff") {
+        router.replace("/dashboard/work-orders");
+      }
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex justify-center py-16">
+        <span className="loading loading-spinner loading-lg" />
       </div>
+    );
+  }
+
+  if (user.role === "manager") return <ManagerSummary />;
+  if (user.role === "admin") return <AdminSummary />;
+
+  return (
+    <div className="flex justify-center py-16">
+      <span className="loading loading-spinner loading-lg" />
     </div>
   );
 }
