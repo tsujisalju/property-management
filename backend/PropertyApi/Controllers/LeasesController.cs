@@ -155,14 +155,18 @@ public class LeasesController(
 
         await db.SaveChangesAsync();
 
-        // Notify the lease's tenant by email
-        await email.SendAsync(
-            lease.Tenant.Email,
-            "Lease Terminated",
-            $"<h2>Your lease has been terminated.</h2>" +
-            $"<p>Unit <strong>{lease.Unit.UnitNumber}</strong> at " +
-            $"{lease.Unit.Property?.Name} is now vacant.</p>"
-        );
+        // Notify the lease's tenant by email — best-effort, SES may be unavailable
+        try
+        {
+            await email.SendAsync(
+                lease.Tenant.Email,
+                "Lease Terminated",
+                $"<h2>Your lease has been terminated.</h2>" +
+                $"<p>Unit <strong>{lease.Unit.UnitNumber}</strong> at " +
+                $"{lease.Unit.Property?.Name} is now vacant.</p>"
+            );
+        }
+        catch { /* swallow */ }
 
         return NoContent(); // 204 — success, nothing to return
     }
