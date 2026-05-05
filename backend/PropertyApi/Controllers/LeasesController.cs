@@ -130,7 +130,7 @@ public class LeasesController(
     [HttpPatch("{id:guid}/terminate")]
     public async Task<IActionResult> Terminate(Guid id)
     {
-        var tenant = await currentUser.RequireCurrentUserAsync();
+        var caller = await currentUser.RequireCurrentUserAsync();
 
         // Load lease + unit together
         var lease = await db.Leases
@@ -140,8 +140,9 @@ public class LeasesController(
 
         if (lease is null) return NotFound();
 
-        // Security check: tenants can only terminate their own lease
-        if (lease.TenantId != tenant.Id)
+        // Managers and admins can terminate any lease; tenants only their own
+        var isPrivileged = caller.Role == "manager" || caller.Role == "admin";
+        if (!isPrivileged && lease.TenantId != caller.Id)
             return Forbid();
 
         // Can only terminate an active lease
@@ -154,9 +155,9 @@ public class LeasesController(
 
         await db.SaveChangesAsync();
 
-        // Notify tenant by email
+        // Notify the lease's tenant by email
         await email.SendAsync(
-            tenant.Email,
+            lease.Tenant.Email,
             "Lease Terminated",
             $"<h2>Your lease has been terminated.</h2>" +
             $"<p>Unit <strong>{lease.Unit.UnitNumber}</strong> at " +
