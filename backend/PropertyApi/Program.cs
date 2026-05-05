@@ -17,12 +17,12 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Property Management API", Version = "v1" });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name         = "Authorization",
-        Type         = SecuritySchemeType.Http,
-        Scheme       = "bearer",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
         BearerFormat = "JWT",
-        In           = ParameterLocation.Header,
-        Description  = "Paste your Cognito ID token here",
+        In = ParameterLocation.Header,
+        Description = "Paste your Cognito ID token here",
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -51,7 +51,7 @@ builder.Services.AddAWSService<IAmazonSimpleEmailServiceV2>();
 // ── Authentication (Cognito JWT) ──────────────────────────────────────────
 // ASP.NET Core maps __ in env var names to : in config keys, so
 // the docker-compose env var Jwt__Issuer is read as Jwt:Issuer here.
-var jwtIssuer   = builder.Configuration["Jwt:Issuer"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 if (!string.IsNullOrWhiteSpace(jwtIssuer) && !string.IsNullOrWhiteSpace(jwtAudience)
@@ -60,16 +60,16 @@ if (!string.IsNullOrWhiteSpace(jwtIssuer) && !string.IsNullOrWhiteSpace(jwtAudie
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
         {
-            options.Authority        = jwtIssuer;
-            options.Audience         = jwtAudience;
+            options.Authority = jwtIssuer;
+            options.Audience = jwtAudience;
             options.MapInboundClaims = false; // keep "sub" as "sub", not remapped to nameidentifier URI
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer           = true,
-                ValidIssuer              = jwtIssuer,
-                ValidateAudience         = true,
-                ValidAudience            = jwtAudience,
-                ValidateLifetime         = true,
+                ValidateIssuer = true,
+                ValidIssuer = jwtIssuer,
+                ValidateAudience = true,
+                ValidAudience = jwtAudience,
+                ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
             };
             // Read the token from the auth_token HttpOnly cookie so the browser
@@ -119,7 +119,8 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ── Middleware pipeline ────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
+var enableSwagger = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("EnableSwagger");
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
