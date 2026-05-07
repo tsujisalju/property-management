@@ -4,13 +4,13 @@ A cloud-based property management system built with Next.js, ASP.NET 8, and AWS.
 
 ## Tech stack
 
-| Layer | Technology | Hosting |
-|---|---|---|
-| Frontend | Next.js 16, TypeScript, Tailwind | Vercel |
-| Backend | ASP.NET 8, C# | AWS EC2 (Docker) |
-| Database | PostgreSQL 15 | AWS RDS |
-| Storage | Files & PDFs | AWS S3 |
-| Auth | JWT | AWS Cognito |
+| Layer    | Technology                       | Hosting          |
+| -------- | -------------------------------- | ---------------- |
+| Frontend | Next.js 16, TypeScript, Tailwind | Vercel           |
+| Backend  | ASP.NET 8, C#                    | AWS EC2 (Docker) |
+| Database | PostgreSQL 15                    | AWS RDS          |
+| Storage  | Files & PDFs                     | AWS S3           |
+| Auth     | JWT                              | AWS Cognito      |
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ Docker will handle setting up the environment and start the Postgres database, A
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/tsujisalju/property-management.git
 cd property-management
 cp .env.example .env
 # Edit .env and add your AWS credentials
@@ -37,6 +37,7 @@ docker compose up --build
 ```
 
 This starts:
+
 - **Frontend** at http://localhost:3000
 - **Backend API** at http://localhost:8080
 - **PostgreSQL** at localhost:5432 (auto-migrated on first run)
@@ -95,9 +96,9 @@ property-management/
 
 ## Team workload
 
-| Member | Role in app | Feature area |
-|---|---|---|
-| Qayyum | Property manager | Maintenance scheduling |
-| Ahmed | Tenant | Issue reporting, portal |
-| Teshwindev | Finance / admin | Billing, reports |
-| Hayyan | Maintenance staff | Work order updates |
+| Member     | Role in app       | Feature area            |
+| ---------- | ----------------- | ----------------------- |
+| Qayyum     | Property manager  | Maintenance scheduling  |
+| Ahmed      | Tenant            | Issue reporting, portal |
+| Teshwindev | Finance / admin   | Billing, reports        |
+| Hayyan     | Maintenance staff | Work order updates      |
